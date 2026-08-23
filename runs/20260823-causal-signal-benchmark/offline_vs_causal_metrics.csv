@@ -1,0 +1,5 @@
+derivative_method,domain,offline_mode,causal_mode,window_length,polynomial_order,effective_lookahead_samples,startup_behavior,amplitude_bias_fraction,rmse,phase_lag_samples,phase_lag_s,peak_timing_error_s,peak_amplitude_error,reference_peak,causal_peak
+backward_finite_difference,filtered_displacement_x,offline_zero_phase,causal_sos,9,3,0,WARMUP_1_OF_3,0.23663604088865778,0.10719721028828495,0.0,0.0,0.0,0.19113287485816854,0.8077082178200428,0.9988410926782113
+backward_finite_difference,acceleration_x,offline_zero_phase,causal_sos,9,3,0,WARMUP_1_OF_3,1.0201808032573954,38.17972314526122,2.0,0.06666666666666643,-0.36666666666666714,79.12429295218006,77.55908825135647,156.68338120353653
+causal_polynomial,filtered_displacement_x,offline_zero_phase,causal_sos,9,3,0,WARMUP_1_OF_4,0.23663604088865778,0.10719721028828495,0.0,0.0,0.0,0.19113287485816854,0.8077082178200428,0.9988410926782113
+causal_polynomial,acceleration_x,offline_zero_phase,causal_sos,9,3,0,WARMUP_1_OF_4,2.293838486000366,77.08476803096114,3.0,0.09999999999999964,-0.3333333333333339,177.90802157006033,77.55908825135647,255.46710982141678

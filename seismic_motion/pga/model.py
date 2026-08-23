@@ -11,7 +11,7 @@ import numpy as np
 from scipy import stats
 
 
-Algorithm = Literal["single_coefficient", "ridge", "huber"]
+Algorithm = Literal["median", "single_coefficient", "log_linear", "ridge", "huber"]
 
 
 def group_kfold_indices(
@@ -75,6 +75,14 @@ class EmpiricalPGAModel:
         target = np.asarray(pga_true, dtype=np.float64)
         if target.ndim != 1 or np.any(~np.isfinite(target)) or np.any(target <= 0):
             raise ValueError("PGA target must be a finite positive vector")
+        if self.algorithm == "median":
+            self.coefficient = np.empty(0, dtype=np.float64)
+            self.intercept = float(np.median(target))
+            self.feature_mean = np.empty(0, dtype=np.float64)
+            self.feature_scale = np.empty(0, dtype=np.float64)
+            self.log_target = False
+            self.training_metadata = metadata or {}
+            return self
         design = self._prepare(features, fit=True)
         response = np.log(target) if self.log_target else target
         if self.algorithm == "single_coefficient":
@@ -87,17 +95,21 @@ class EmpiricalPGAModel:
             self.log_target = False
         else:
             augmented = np.column_stack([np.ones(design.shape[0]), design])
-            penalty = np.eye(augmented.shape[1]) * self.alpha
+            effective_alpha = self.alpha if self.algorithm in {"ridge", "huber"} else 0.0
+            penalty = np.eye(augmented.shape[1]) * effective_alpha
             penalty[0, 0] = 0
             weights = np.ones(design.shape[0])
-            iterations = 1 if self.algorithm == "ridge" else 30
+            iterations = 30 if self.algorithm == "huber" else 1
             parameters = np.zeros(augmented.shape[1])
             for _ in range(iterations):
                 weighted = augmented * np.sqrt(weights[:, None])
                 weighted_response = response * np.sqrt(weights)
-                parameters = np.linalg.solve(
-                    weighted.T @ weighted + penalty,
-                    weighted.T @ weighted_response,
+                matrix = weighted.T @ weighted + penalty
+                vector = weighted.T @ weighted_response
+                parameters = (
+                    np.linalg.lstsq(matrix, vector, rcond=None)[0]
+                    if self.algorithm == "log_linear"
+                    else np.linalg.solve(matrix, vector)
                 )
                 if self.algorithm == "huber":
                     residual = response - augmented @ parameters
@@ -120,7 +132,10 @@ class EmpiricalPGAModel:
             raise RuntimeError("model has not been fitted")
         if self.requires_scale and not scale_valid and not allow_uncalibrated_evaluation:
             raise RuntimeError("PGA prediction rejected because geometric scale is invalid")
-        if self.algorithm == "single_coefficient":
+        if self.algorithm == "median":
+            count = np.asarray(features).shape[0]
+            prediction = np.full(count, self.intercept, dtype=np.float64)
+        elif self.algorithm == "single_coefficient":
             values = np.asarray(features, dtype=np.float64).reshape(-1, 1)
             prediction = values[:, 0] * self.coefficient[0]
         else:

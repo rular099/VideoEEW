@@ -1,0 +1,152 @@
+{
+  "all": {
+    "fraction_within_factor_1p5": {
+      "bootstrap_iterations": 2000,
+      "lower_95": 0.0,
+      "median": 0.3,
+      "upper_95": 0.6
+    },
+    "fraction_within_factor_2": {
+      "bootstrap_iterations": 2000,
+      "lower_95": 0.3,
+      "median": 0.6,
+      "upper_95": 0.9
+    },
+    "log_pga_mae": {
+      "bootstrap_iterations": 2000,
+      "lower_95": 0.46254257197002824,
+      "median": 0.8958848302456186,
+      "upper_95": 1.4332225803495262
+    },
+    "mae": {
+      "bootstrap_iterations": 2000,
+      "lower_95": 69.02985337992108,
+      "median": 112.90582632281448,
+      "upper_95": 156.67092423888647
+    },
+    "median_multiplicative_error": {
+      "bootstrap_iterations": 2000,
+      "lower_95": 1.3010828515886002,
+      "median": 1.8629259240028397,
+      "upper_95": 5.56887725150677
+    },
+    "pearson": {
+      "bootstrap_iterations": 2000,
+      "lower_95": -0.05021272241223805,
+      "median": 0.5362259175379632,
+      "upper_95": 0.8699373692398366
+    },
+    "rmse": {
+      "bootstrap_iterations": 2000,
+      "lower_95": 86.25682053454635,
+      "median": 133.35035553912545,
+      "upper_95": 171.43744972318726
+    },
+    "spearman": {
+      "bootstrap_iterations": 2000,
+      "lower_95": -0.13662818662818657,
+      "median": 0.6100628930817611,
+      "upper_95": 0.9250116459627328
+    }
+  },
+  "posthoc_aligned": {
+    "fraction_within_factor_1p5": {
+      "bootstrap_iterations": 2000,
+      "lower_95": 0.14285714285714285,
+      "median": 0.5714285714285714,
+      "upper_95": 0.8571428571428571
+    },
+    "fraction_within_factor_2": {
+      "bootstrap_iterations": 2000,
+      "lower_95": 0.42857142857142855,
+      "median": 0.7142857142857143,
+      "upper_95": 1.0
+    },
+    "log_pga_mae": {
+      "bootstrap_iterations": 2000,
+      "lower_95": 0.20037394111871304,
+      "median": 0.4884935099796689,
+      "upper_95": 0.856254504610188
+    },
+    "mae": {
+      "bootstrap_iterations": 2000,
+      "lower_95": 45.575592133035066,
+      "median": 93.89332006537524,
+      "upper_95": 148.73712085948347
+    },
+    "median_multiplicative_error": {
+      "bootstrap_iterations": 2000,
+      "lower_95": 1.154512908900127,
+      "median": 1.3657508510146175,
+      "upper_95": 2.1598751467878037
+    },
+    "pearson": {
+      "bootstrap_iterations": 2000,
+      "lower_95": -0.44475009443724395,
+      "median": 0.2722650660651388,
+      "upper_95": 0.885826716924461
+    },
+    "rmse": {
+      "bootstrap_iterations": 2000,
+      "lower_95": 56.64353386393851,
+      "median": 116.90430569612667,
+      "upper_95": 164.45804738093645
+    },
+    "spearman": {
+      "bootstrap_iterations": 2000,
+      "lower_95": -0.40740740740740744,
+      "median": 0.44444444444444453,
+      "upper_95": 1.0
+    }
+  },
+  "video_quality": {
+    "fraction_within_factor_1p5": {
+      "bootstrap_iterations": 2000,
+      "lower_95": 0.0,
+      "median": 0.3,
+      "upper_95": 0.6
+    },
+    "fraction_within_factor_2": {
+      "bootstrap_iterations": 2000,
+      "lower_95": 0.3,
+      "median": 0.6,
+      "upper_95": 0.9
+    },
+    "log_pga_mae": {
+      "bootstrap_iterations": 2000,
+      "lower_95": 0.46254257197002824,
+      "median": 0.8958848302456186,
+      "upper_95": 1.4332225803495262
+    },
+    "mae": {
+      "bootstrap_iterations": 2000,
+      "lower_95": 69.02985337992108,
+      "median": 112.90582632281448,
+      "upper_95": 156.67092423888647
+    },
+    "median_multiplicative_error": {
+      "bootstrap_iterations": 2000,
+      "lower_95": 1.3010828515886002,
+      "median": 1.8629259240028397,
+      "upper_95": 5.56887725150677
+    },
+    "pearson": {
+      "bootstrap_iterations": 2000,
+      "lower_95": -0.05021272241223805,
+      "median": 0.5362259175379632,
+      "upper_95": 0.8699373692398366
+    },
+    "rmse": {
+      "bootstrap_iterations": 2000,
+      "lower_95": 86.25682053454635,
+      "median": 133.35035553912545,
+      "upper_95": 171.43744972318726
+    },
+    "spearman": {
+      "bootstrap_iterations": 2000,
+      "lower_95": -0.13662818662818657,
+      "median": 0.6100628930817611,
+      "upper_95": 0.9250116459627328
+    }
+  }
+}

@@ -1,0 +1,11 @@
+schema_version: 1
+playlist_id: direct-paired-real-v1
+boundary_policy: explicit_tracker_and_signal_reset
+timestamp_policy: target_fps_rebased_with_source_pts_audit
+loop: true
+metadata_policy: unknown_fields_are_not_inferred
+sources:
+  - ${DATA_ROOT}/视频/26.avi
+  - ${DATA_ROOT}/视频/48.avi
+  - ${DATA_ROOT}/视频/61.avi
+  - ${DATA_ROOT}/视频/65.avi

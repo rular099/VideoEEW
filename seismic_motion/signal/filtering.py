@@ -73,6 +73,7 @@ class CausalBandpassFilter:
     ) -> None:
         self.sos = design_bandpass(sample_rate_hz, bandpass_hz, order=order)
         self._state: np.ndarray | None = None
+        self.samples_seen = 0
 
     def process(self, values: np.ndarray) -> np.ndarray:
         samples = np.asarray(values, dtype=np.float64)
@@ -88,5 +89,9 @@ class CausalBandpassFilter:
         filtered, self._state = signal.sosfilt(
             self.sos, samples, axis=0, zi=self._state
         )
+        self.samples_seen += int(samples.shape[0])
         return filtered[:, 0] if squeeze else filtered
 
+    @property
+    def state_nbytes(self) -> int:
+        return 0 if self._state is None else int(self._state.nbytes)

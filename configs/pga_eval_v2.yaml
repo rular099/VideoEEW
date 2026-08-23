@@ -1,0 +1,39 @@
+schema_version: 2
+feature_version: videoeew-motion-v2-causal
+target: pga_horizontal_vector_gal
+primary_algorithm: single_coefficient
+features:
+  - common_peak_acceleration_px_s2
+  - common_rms_acceleration_px_s2
+  - common_dominant_frequency_hz
+  - common_energy_0p3_1_hz
+  - common_energy_1_3_hz
+  - common_energy_3_8_hz
+  - residual_rms_px
+  - residual_peak_px
+  - mean_visibility
+  - mean_inlier_ratio
+  - mean_fit_rmse_px
+split:
+  method: group_kfold
+  group_column: record_id
+  folds: 5
+  seed: 0
+model:
+  ridge_alpha: 1.0
+video_quality:
+  min_tracks: 10
+  min_visibility: 0.6
+  min_inlier_ratio: 0.6
+  max_fit_rmse_px: 2.0
+  max_missing_frames: 0
+  max_timestamp_jitter_s: 0.005
+  unavailable_metric_policy: retain_and_mark_unknown
+posthoc:
+  exploratory_min_correlation: 0.4
+  label: RESEARCH_DIAGNOSTIC_ONLY_NOT_DEPLOYABLE
+bootstrap:
+  iterations: 2000
+  seed: 0
+metadata:
+  unknown_policy: literal_UNKNOWN_and_NOT_EVALUABLE_group_cv

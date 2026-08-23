@@ -1,0 +1,65 @@
+schema_version: 2
+seed: 0
+
+video:
+  fps_hint: 30.0
+  use_input_timestamps: true
+  roi: null
+
+tracker:
+  backend: cotracker3_online
+  cotracker_root: null
+  checkpoint: null
+  num_points: 32
+  point_mode: corners
+  window_len: 16
+  step: 8
+  iters: 6
+  model_resolution: [384, 512]
+  visibility_threshold: 0.6
+  max_blocks_before_reseed: 64
+
+motion:
+  global_model: similarity
+  min_valid_tracks: 10
+  use_ransac: true
+  ransac_threshold_px: 1.5
+  min_inlier_ratio: 0.6
+  min_spatial_coverage: 0.08
+  max_fit_rmse_px: 2.0
+  quality_gate: true
+
+scale:
+  method: uncalibrated
+  known_length_mm: null
+  known_length_px: null
+  valid_roi: null
+
+signal:
+  timestamp_aware: true
+  detrend: false
+  bandpass_hz: [0.3, 8.0]
+  derivative_method: causal_polynomial
+  causal: true
+  online:
+    filter_order: 4
+    window_length: 9
+    polynomial_order: 3
+    startup_behavior: emit_nan_derivatives_until_ready
+    effective_lookahead_samples: 0
+
+runtime:
+  target_fps: 30.0
+  max_end_to_end_latency_ms: 500.0
+  max_queue_blocks: 2
+  overload_policy: reject_and_stop
+  replay_mode: wall_clock_playlist
+  playlist_loop: true
+
+pga:
+  enabled: true
+  reject_without_scale: true
+  model_path: null
+  running_mode: instantaneous_and_running_max
+  allow_uncalibrated_research: true
+  deployment_output_without_scale: false

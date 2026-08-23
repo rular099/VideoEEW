@@ -86,6 +86,36 @@ class CoTrackerAdapter:
         if self.event_sink is not None:
             self.event_sink(event)
 
+    def reset_stream(self, frame_index: int, reason: str = "source_boundary") -> None:
+        """Reset temporal state at an explicit source discontinuity.
+
+        The loaded model object is retained, but its online prediction state is
+        reinitialized by the next ``process_window`` call.  The reset receives a
+        new reseed id so downstream signal/audit code cannot mistake the source
+        boundary for continuous motion.
+        """
+
+        self._query_points = None
+        self._initial_query_points = None
+        self._point_ids = None
+        self._base_frame = int(frame_index)
+        self._blocks_since_reseed = 0
+        self._reseed_id += 1
+        self._last_tracks = None
+        self._last_visibility = None
+        self._last_base_frame = int(frame_index)
+        self._last_window_timestamps = None
+        self._last_window_indices = None
+        self._next_output_frame = None
+        self._emit_event(
+            {
+                "event": "tracker_stream_reset",
+                "frame_index": int(frame_index),
+                "reseed_id": self._reseed_id,
+                "reason": str(reason),
+            }
+        )
+
     def _load_backend(self) -> None:
         if self._predictor is not None:
             return

@@ -15,6 +15,19 @@ import numpy as np
 class TimingRecord:
     timestamp: float
     block_index: int
+    capture_timestamp: float = float("nan")
+    enqueue_timestamp: float = float("nan")
+    tracker_start: float = float("nan")
+    tracker_end: float = float("nan")
+    motion_end: float = float("nan")
+    signal_end: float = float("nan")
+    pga_end: float = float("nan")
+    write_end: float = float("nan")
+    capture_to_tracker_end: float = float("nan")
+    capture_to_pga: float = float("nan")
+    queue_wait: float = float("nan")
+    tracker_compute: float = float("nan")
+    postprocess_compute: float = float("nan")
     capture_ms: float = 0.0
     preprocess_ms: float = 0.0
     encoder_ms: float = float("nan")
@@ -69,6 +82,11 @@ def summarize_timings(records: list[TimingRecord]) -> dict[str, dict[str, float]
         return {}
     summary: dict[str, dict[str, float]] = {}
     for field in (
+        "capture_to_tracker_end",
+        "capture_to_pga",
+        "queue_wait",
+        "tracker_compute",
+        "postprocess_compute",
         "capture_ms",
         "preprocess_ms",
         "tracker_ms",
