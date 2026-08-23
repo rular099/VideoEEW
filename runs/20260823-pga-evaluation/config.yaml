@@ -1,0 +1,14 @@
+schema_version: 1
+run_type: real_video_pga_group_cv
+source_runtime_config: configs/real_video_eval.yaml
+source_training_config: configs/pga_train.yaml
+records: [6, 16, 26, 48, 61, 65, 69, 71, 84, 85]
+quality_filter:
+  minimum_alignment_correlation: 0.4
+  reject_quality_flags: [INVALID]
+split:
+  method: group_kfold
+  group_column: record_id
+  folds: 5
+primary_algorithm: single_coefficient
+deployment_prediction_allowed: false

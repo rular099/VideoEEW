@@ -1,0 +1,23 @@
+{
+  "alignment_records": 10,
+  "deployment_pga_allowed": false,
+  "performance_caveat": "shared server CPU load approximately 98; not a controlled realtime acceptance run",
+  "quality_frame_totals": {
+    "GOOD": 13718
+  },
+  "records": 10,
+  "resource_snapshot": {
+    "batch_observed_rss_kb": 1129916,
+    "batch_peak_rss_kb": 1267432,
+    "gpu_memory_mib": 3906,
+    "scope": "one live process snapshot during record 85; not a per-block trace"
+  },
+  "tracker_blocks": 1709,
+  "tracker_ms": {
+    "max": 6014.995755627751,
+    "mean": 180.5240803465221,
+    "p50": 160.17931886017323,
+    "p95": 247.52449952065942,
+    "p99": 445.4948676377538
+  }
+}

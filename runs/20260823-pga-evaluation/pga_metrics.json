@@ -1,0 +1,61 @@
+{
+  "algorithms": {
+    "huber": {
+      "fraction_within_factor_1p5": 0.42857142857142855,
+      "fraction_within_factor_2": 0.7142857142857143,
+      "log_pga_mae": 0.4963443532794786,
+      "mae": 105.16428714773504,
+      "median_multiplicative_error": 1.5589573723716226,
+      "pearson": 0.04117158473377689,
+      "rmse": 117.85604278380897,
+      "spearman": 0.07142857142857144
+    },
+    "ridge": {
+      "fraction_within_factor_1p5": 0.42857142857142855,
+      "fraction_within_factor_2": 0.7142857142857143,
+      "log_pga_mae": 0.527634906536033,
+      "mae": 112.41906504091149,
+      "median_multiplicative_error": 1.5589573723716226,
+      "pearson": -0.05264063946405329,
+      "rmse": 126.66941154463095,
+      "spearman": 0.07142857142857144
+    },
+    "single_coefficient": {
+      "fraction_within_factor_1p5": 0.5714285714285714,
+      "fraction_within_factor_2": 0.7142857142857143,
+      "log_pga_mae": 0.49309646743161134,
+      "mae": 94.4184449581068,
+      "median_multiplicative_error": 1.3657508510146175,
+      "pearson": 0.2576483839125422,
+      "rmse": 118.08073313865391,
+      "spearman": 0.4642857142857144
+    }
+  },
+  "deployment_prediction_allowed": false,
+  "excluded_record_ids": [
+    "6",
+    "16",
+    "85"
+  ],
+  "excluded_rows": 3,
+  "group_column": "record_id",
+  "input_rows": 10,
+  "pga_bin_edges_gal": [
+    0.0,
+    50.0,
+    100.0,
+    200.0,
+    400.0,
+    1000.0
+  ],
+  "reason": "geometric scale missing; results are offline setup-specific research evaluation",
+  "row_filter": {
+    "minimum_alignment_correlation": 0.4,
+    "reject_quality_flags": [
+      "INVALID"
+    ]
+  },
+  "rows": 7,
+  "target": "pga_horizontal_vector_gal",
+  "unique_groups": 7
+}

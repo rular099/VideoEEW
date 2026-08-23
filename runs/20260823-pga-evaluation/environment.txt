@@ -1,0 +1,5 @@
+Extraction used server 242 `/opt/zb/miniconda3/envs/dtbf_zb` (Python 3.10.16,
+PyTorch 2.6.0+cu124, NumPy 2.0.1) and physical V100S GPU 3. Cross-validation
+used the local environment (Python 3.11.11, NumPy 1.26.4, SciPy 1.14.1).
+The exact batch start timestamp was not captured by the pre-audit-patch runner;
+this missing field is retained rather than reconstructed.

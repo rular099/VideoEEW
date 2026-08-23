@@ -41,7 +41,16 @@ def _video_metadata(path: str) -> dict[str, float | int | str]:
     }
 
 
-def build_rows(data_root: str | Path) -> list[dict[str, object]]:
+def build_rows(
+    data_root: str | Path, *, redact_paths: bool = False
+) -> list[dict[str, object]]:
+    resolved_root = str(Path(data_root).resolve())
+
+    def display_path(value: str) -> str:
+        if redact_paths and value:
+            return value.replace(resolved_root, "${DATA_ROOT}", 1)
+        return value
+
     rows: list[dict[str, object]] = []
     for pair in discover_dataset_pairs(data_root):
         video = _video_metadata(pair.video_path) if pair.video_path else {
@@ -59,10 +68,12 @@ def build_rows(data_root: str | Path) -> list[dict[str, object]]:
             {
                 "record_id": pair.record_id,
                 "pairing_status": pair.pairing_status,
-                "video_path": pair.video_path,
+                "video_path": display_path(pair.video_path),
                 **video,
                 "timestamp_source": "container_constant_frame_rate_unverified_pts",
-                "strong_motion_paths": "|".join(pair.strong_motion_paths),
+                "strong_motion_paths": "|".join(
+                    display_path(path) for path in pair.strong_motion_paths
+                ),
                 "strong_motion_segments": len(records),
                 "strong_motion_samples": sum(record.timestamps_s.size for record in records),
                 "strong_motion_duration_s": sum(
@@ -84,12 +95,15 @@ def main() -> None:
     parser.add_argument("--data-root", required=True)
     parser.add_argument("--output", required=True)
     parser.add_argument("--summary")
+    parser.add_argument("--redact-paths", action="store_true")
     args = parser.parse_args()
-    rows = build_rows(args.data_root)
+    rows = build_rows(args.data_root, redact_paths=args.redact_paths)
     output = Path(args.output)
     output.parent.mkdir(parents=True, exist_ok=True)
     with output.open("w", newline="", encoding="utf-8") as handle:
-        writer = csv.DictWriter(handle, fieldnames=list(rows[0]))
+        writer = csv.DictWriter(
+            handle, fieldnames=list(rows[0]), lineterminator="\n"
+        )
         writer.writeheader()
         writer.writerows(rows)
     counts: dict[str, int] = {}
@@ -121,4 +135,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-

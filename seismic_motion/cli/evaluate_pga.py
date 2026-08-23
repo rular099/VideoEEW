@@ -48,7 +48,21 @@ def main() -> None:
     parser.add_argument("--output-dir", required=True)
     args = parser.parse_args()
     config = yaml.safe_load(Path(args.config).read_text(encoding="utf-8"))
-    rows = _read_rows(args.dataset)
+    input_rows = _read_rows(args.dataset)
+    row_filter = config.get("row_filter", {})
+    minimum_alignment = float(row_filter.get("minimum_alignment_correlation", 0.0))
+    reject_quality_flags = tuple(str(value) for value in row_filter.get("reject_quality_flags", []))
+    rows = []
+    excluded_rows: list[dict[str, str]] = []
+    for row in input_rows:
+        correlation = float(row.get("alignment_correlation", "inf"))
+        flags = str(row.get("quality_flags", ""))
+        accepted = correlation >= minimum_alignment and not any(
+            rejected in flags for rejected in reject_quality_flags
+        )
+        (rows if accepted else excluded_rows).append(row)
+    if not rows:
+        raise ValueError("row_filter rejected every dataset row")
     feature_names = tuple(config["features"])
     target_name = str(config["target"])
     group_name = str(config["split"]["group_column"])
@@ -66,6 +80,7 @@ def main() -> None:
     output.mkdir(parents=True, exist_ok=True)
     algorithm_metrics: dict[str, dict[str, float]] = {}
     all_predictions: dict[str, np.ndarray] = {}
+    algorithm_layout: dict[str, tuple[tuple[str, ...], list[int]]] = {}
     for algorithm in config["algorithms"]:
         predictions = np.full(target.shape, np.nan)
         names = (
@@ -78,6 +93,7 @@ def main() -> None:
             if algorithm == "single_coefficient"
             else list(range(len(feature_names)))
         )
+        algorithm_layout[str(algorithm)] = (names, columns)
         for train, test in folds:
             model = EmpiricalPGAModel(
                 feature_names=names,
@@ -95,20 +111,22 @@ def main() -> None:
         algorithm_metrics[algorithm] = evaluate_predictions(target, predictions)
         all_predictions[algorithm] = predictions
     primary = str(config["primary_algorithm"])
+    primary_names, primary_columns = algorithm_layout[primary]
     final_model = EmpiricalPGAModel(
-        feature_names=feature_names,
+        feature_names=primary_names,
         algorithm=primary,
         alpha=float(config["model"]["ridge_alpha"]),
         log_target=bool(config["model"]["log_target"]),
         requires_scale=bool(config["model"]["requires_scale"]),
     ).fit(
-        features,
+        features[:, primary_columns],
         target,
         metadata={
             "group_column": group_name,
             "unique_groups": int(np.unique(groups).size),
             "offline_uncalibrated_evaluation": True,
             "deployment_prediction_allowed": False,
+            "selection_policy": "predeclared simple baseline; not selected on test-fold performance",
         },
     )
     final_model.save(output / "pga_model.json")
@@ -131,6 +149,10 @@ def main() -> None:
         "target": target_name,
         "group_column": group_name,
         "rows": len(rows),
+        "input_rows": len(input_rows),
+        "excluded_rows": len(excluded_rows),
+        "excluded_record_ids": [row.get("record_id", "") for row in excluded_rows],
+        "row_filter": row_filter,
         "unique_groups": int(np.unique(groups).size),
         "algorithms": algorithm_metrics,
         "deployment_prediction_allowed": False,

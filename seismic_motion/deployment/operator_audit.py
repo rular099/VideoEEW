@@ -105,10 +105,43 @@ def load_onnx_operators(path: str | Path) -> list[OperatorRow]:
         import onnx
     except ImportError as exc:
         raise RuntimeError("install the onnx extra to inspect exported graphs") from exc
-    model = onnx.load(str(path))
+    model = onnx.shape_inference.infer_shapes(onnx.load(str(path)))
     counts: dict[str, int] = {}
+    shapes: dict[str, set[str]] = {}
+    shape_modes: dict[str, set[str]] = {}
+    value_shapes: dict[str, str] = {}
+    for value in (*model.graph.input, *model.graph.value_info, *model.graph.output):
+        tensor_type = value.type.tensor_type
+        if not tensor_type.HasField("shape"):
+            continue
+        dimensions = []
+        static = True
+        for dimension in tensor_type.shape.dim:
+            if dimension.HasField("dim_value"):
+                dimensions.append(str(dimension.dim_value))
+            elif dimension.HasField("dim_param"):
+                dimensions.append(dimension.dim_param)
+                static = False
+            else:
+                dimensions.append("?")
+                static = False
+        value_shapes[value.name] = "[" + ",".join(dimensions) + "]"
+        value_shapes[f"{value.name}::mode"] = "static" if static else "dynamic"
     for node in model.graph.node:
         counts[node.op_type] = counts.get(node.op_type, 0) + 1
+        inputs = [value_shapes[name] for name in node.input if name in value_shapes]
+        outputs = [value_shapes[name] for name in node.output if name in value_shapes]
+        shapes.setdefault(node.op_type, set()).add(
+            f"{'|'.join(inputs) or '?'} -> {'|'.join(outputs) or '?'}"
+        )
+        modes = [
+            value_shapes.get(f"{name}::mode", "unknown")
+            for name in (*node.input, *node.output)
+            if name in value_shapes
+        ]
+        shape_modes.setdefault(node.op_type, set()).add(
+            "dynamic" if "dynamic" in modes else "static" if modes else "unknown"
+        )
     rows = []
     for operator, count in sorted(counts.items()):
         support, fallback = KNOWN_RKNN.get(
@@ -123,8 +156,8 @@ def load_onnx_operators(path: str | Path) -> list[OperatorRow]:
                 graph=Path(path).name,
                 operator=operator,
                 count=count,
-                shape="see ONNX value_info",
-                shape_mode="fixed_input_export",
+                shape="; ".join(sorted(shapes[operator])[:6]),
+                shape_mode="/".join(sorted(shape_modes[operator])),
                 rknn_support=support,
                 fallback_plan=fallback,
                 evidence=str(Path(path).resolve()),
@@ -137,8 +170,9 @@ def write_operator_csv(path: str | Path, rows: list[OperatorRow]) -> None:
     output = Path(path)
     output.parent.mkdir(parents=True, exist_ok=True)
     with output.open("w", newline="", encoding="utf-8") as handle:
-        writer = csv.DictWriter(handle, fieldnames=list(asdict(rows[0])))
+        writer = csv.DictWriter(
+            handle, fieldnames=list(asdict(rows[0])), lineterminator="\n"
+        )
         writer.writeheader()
         for row in rows:
             writer.writerow(asdict(row))
-

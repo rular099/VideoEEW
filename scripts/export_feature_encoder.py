@@ -21,6 +21,7 @@ def main() -> None:
     parser.add_argument("--output", required=True)
     parser.add_argument("--opset", type=int, default=17)
     parser.add_argument("--device", default="cpu")
+    parser.add_argument("--skip-onnxruntime", action="store_true")
     args = parser.parse_args()
     root = Path(args.cotracker_root).resolve()
     sys.path.insert(0, str(root))
@@ -55,6 +56,21 @@ def main() -> None:
         "fixed_shape": True,
         "onnxruntime_checked": False,
     }
+    reference_path = output.with_suffix(".reference.npz")
+    np.savez_compressed(
+        reference_path,
+        rgb_0_255=example.detach().cpu().numpy(),
+        normalized_features=eager.detach().cpu().numpy(),
+    )
+    metrics["reference_path"] = str(reference_path.resolve())
+    if args.skip_onnxruntime:
+        metrics["onnxruntime_reason"] = "deferred to a separate ABI-compatible process"
+        metrics_path = output.with_suffix(".metrics.json")
+        metrics_path.write_text(
+            json.dumps(metrics, indent=2, sort_keys=True) + "\n", encoding="utf-8"
+        )
+        print(json.dumps(metrics, indent=2, sort_keys=True))
+        return
     try:
         import onnxruntime as ort
 
@@ -68,8 +84,8 @@ def main() -> None:
                 "mean_abs_error": float(np.mean(np.abs(actual - expected))),
             }
         )
-    except ImportError:
-        metrics["onnxruntime_reason"] = "onnxruntime is not installed"
+    except Exception as exc:
+        metrics["onnxruntime_reason"] = f"onnxruntime validation failed: {type(exc).__name__}: {exc}"
     metrics_path = output.with_suffix(".metrics.json")
     metrics_path.write_text(json.dumps(metrics, indent=2, sort_keys=True) + "\n", encoding="utf-8")
     print(json.dumps(metrics, indent=2, sort_keys=True))
@@ -77,4 +93,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-

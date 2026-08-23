@@ -4,14 +4,19 @@ from __future__ import annotations
 
 import csv
 from dataclasses import dataclass
+from datetime import datetime, timezone
 import json
 from pathlib import Path
+import subprocess
 from threading import Event, Thread
 import time
 from typing import Any
 
 import numpy as np
+import yaml
 
+from seismic_motion.config import config_sha256
+from seismic_motion.diagnostics.provenance import environment_snapshot, git_state, sha256_file
 from seismic_motion.motion.global_motion import fit_global_transform
 from seismic_motion.motion.quality import QualityThresholds, assess_motion_quality
 from seismic_motion.tracking.cotracker_adapter import CoTrackerAdapter, CoTrackerAdapterConfig
@@ -23,6 +28,7 @@ from seismic_motion.tracking.online_buffer import (
 from seismic_motion.tracking.types import TrackBatch
 
 from .pipeline import _preprocess_frame
+from .metrics import MemoryRecord, TimingRecord, sample_memory, write_memory_csv, write_timing_csv
 
 
 @dataclass(frozen=True)
@@ -50,6 +56,10 @@ class RealtimeRunner:
         queue_bound = int(config["runtime"]["max_queue_blocks"])
         self.source = source
         self.config = config
+        self.cotracker_root = str(Path(cotracker_root).resolve())
+        self.checkpoint = str(Path(checkpoint).resolve())
+        self.device = device
+        self.run_start_utc = datetime.now(timezone.utc).isoformat()
         self.output = Path(output_directory)
         self.output.mkdir(parents=True, exist_ok=True)
         self.capture_queue: AuditedBoundedQueue[CapturedFrame | None] = AuditedBoundedQueue(
@@ -224,13 +234,23 @@ class RealtimeRunner:
                 )
                 self.stop_event.set()
                 return
+            event_time = time.monotonic()
+            memory = sample_memory(event_time, int(batch.frame_indices[0]))
             self._record_event(
                 {
+                    "monotonic_s": event_time,
                     "event": "tracker_block",
                     "frame_index": int(batch.frame_indices[0]),
                     "tracker_ms": tracker_ms,
                     "end_to_end_latency_ms": (time.monotonic() - captured.capture_monotonic)
                     * 1000,
+                    "capture_queue_depth": self.capture_queue.qsize(),
+                    "output_queue_depth": self.output_queue.qsize(),
+                    "capture_rejected_items": self.capture_queue.rejected_items,
+                    "output_rejected_items": self.output_queue.rejected_items,
+                    "rss_mb": memory.rss_mb,
+                    "peak_rss_mb": memory.peak_rss_mb,
+                    "system_available_mem_mb": memory.system_available_mem_mb,
                 }
             )
 
@@ -340,10 +360,127 @@ class RealtimeRunner:
         (self.output / "queue_summary.json").write_text(
             json.dumps(queue_metrics, indent=2, sort_keys=True) + "\n", encoding="utf-8"
         )
-        return {
+        tracker_events = [event for event in self.events if event.get("event") == "tracker_block"]
+        timing_records = [
+            TimingRecord(
+                timestamp=float(event["monotonic_s"]),
+                block_index=index,
+                tracker_ms=float(event["tracker_ms"]),
+                total_pipeline_ms=float(event["tracker_ms"]),
+                end_to_end_latency_ms=float(event["end_to_end_latency_ms"]),
+            )
+            for index, event in enumerate(tracker_events)
+        ]
+        write_timing_csv(self.output / "timing.csv", timing_records)
+        memory_records: list[MemoryRecord] = [
+            MemoryRecord(
+                timestamp=float(event["monotonic_s"]),
+                block_index=index,
+                rss_mb=float(event["rss_mb"]),
+                peak_rss_mb=float(event["peak_rss_mb"]),
+                system_available_mem_mb=float(event["system_available_mem_mb"]),
+            )
+            for index, event in enumerate(tracker_events)
+        ]
+        if not memory_records:
+            memory_records = [sample_memory(time.monotonic(), 0)]
+        write_memory_csv(self.output / "memory.csv", memory_records)
+        with (self.output / "queue.csv").open("w", newline="", encoding="utf-8") as handle:
+            writer = csv.writer(handle)
+            writer.writerow(
+                [
+                    "timestamp",
+                    "capture_queue_depth",
+                    "tracker_queue_depth",
+                    "output_queue_depth",
+                    "dropped_frames",
+                    "dropped_blocks",
+                    "overload_state",
+                ]
+            )
+            for event in tracker_events:
+                rejected_capture = int(event.get("capture_rejected_items", 0))
+                rejected_output = int(event.get("output_rejected_items", 0))
+                writer.writerow(
+                    [
+                        event["monotonic_s"],
+                        event.get("capture_queue_depth", 0),
+                        0,
+                        event.get("output_queue_depth", 0),
+                        rejected_capture,
+                        rejected_output,
+                        "OVERLOAD" if rejected_capture or rejected_output else "NORMAL",
+                    ]
+                )
+        yaml_path = self.output / "config.yaml"
+        yaml_path.write_text(yaml.safe_dump(self.config, sort_keys=False), encoding="utf-8")
+        repository = Path(__file__).resolve().parents[2]
+        environment = environment_snapshot()
+        try:
+            project_git = git_state(repository)
+        except (OSError, subprocess.SubprocessError):
+            project_git = {"commit": "unknown", "dirty": True, "status": []}
+        try:
+            cotracker_git = git_state(self.cotracker_root)
+        except (OSError, subprocess.SubprocessError):
+            cotracker_git = {"commit": "unknown", "dirty": True, "status": []}
+        (self.output / "environment.txt").write_text(
+            json.dumps(environment, indent=2, ensure_ascii=False, sort_keys=True) + "\n",
+            encoding="utf-8",
+        )
+        (self.output / "device_info.txt").write_text(
+            json.dumps(
+                {"requested_device": self.device, "platform": environment["platform"]},
+                indent=2,
+                sort_keys=True,
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+        (self.output / "git_status.txt").write_text(
+            "\n".join(project_git.get("status", [])) + "\n", encoding="utf-8"
+        )
+        try:
+            diff = subprocess.run(
+                ["git", "diff", "--binary", "HEAD"],
+                cwd=repository,
+                check=True,
+                text=True,
+                capture_output=True,
+            ).stdout
+        except (OSError, subprocess.SubprocessError):
+            diff = ""
+        (self.output / "git_diff.patch").write_text(diff, encoding="utf-8")
+        manifest = {
+            "run_id": self.output.name,
+            "git_commit": project_git.get("commit", "unknown"),
+            "git_dirty": bool(project_git.get("dirty", True)),
+            "cotracker_commit": cotracker_git.get("commit", "unknown"),
+            "cotracker_dirty": bool(cotracker_git.get("dirty", True)),
+            "checkpoint_sha256": sha256_file(self.checkpoint),
+            "config_sha256": config_sha256(self.config),
+            "input_id": str(self.source),
+            "start_time": self.run_start_utc,
+            "device": self.device,
+            "software_versions": environment["software_versions"],
+            "tracker_parameters": self.config["tracker"],
+            "motion_parameters": self.config["motion"],
+            "scale_parameters": self.config["scale"],
+            "signal_parameters": self.config["signal"],
+            "pga_model_version": None,
+        }
+        (self.output / "manifest.json").write_text(
+            json.dumps(manifest, indent=2, ensure_ascii=False, sort_keys=True) + "\n",
+            encoding="utf-8",
+        )
+        summary = {
             "queues": queue_metrics,
             "events": len(self.events),
             "stopped_for_overload": any(event.get("event") == "overload" for event in self.events),
             "pga_est": None,
             "pga_rejection_reason": "scale_invalid_and_model_not_trained",
         }
+        (self.output / "metrics.json").write_text(
+            json.dumps(summary, indent=2, sort_keys=True) + "\n", encoding="utf-8"
+        )
+        return summary

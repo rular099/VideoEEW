@@ -1,0 +1,11 @@
+{
+  "device": "local CPU",
+  "git_commit": "ded4c995d1f5649acd09dd76bf354b556b8ae689",
+  "git_dirty": true,
+  "input_id": "deterministic-random-seed-7-production-like-correlation-shapes",
+  "run_id": "20260823-deployment",
+  "software_versions": {
+    "torch": "2.11.0+cu130"
+  },
+  "system": "Linux-7.0.3-arch1-2-x86_64-with-glibc2.43"
+}

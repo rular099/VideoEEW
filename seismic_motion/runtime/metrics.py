@@ -94,8 +94,9 @@ def summarize_timings(records: list[TimingRecord]) -> dict[str, dict[str, float]
 def write_timing_csv(path: str | Path, records: list[TimingRecord]) -> None:
     output = Path(path)
     output.parent.mkdir(parents=True, exist_ok=True)
+    fields = list(TimingRecord.__dataclass_fields__)
     with output.open("w", newline="", encoding="utf-8") as handle:
-        writer = csv.DictWriter(handle, fieldnames=list(asdict(records[0])))
+        writer = csv.DictWriter(handle, fieldnames=fields, lineterminator="\n")
         writer.writeheader()
         for record in records:
             writer.writerow(asdict(record))
@@ -106,8 +107,7 @@ def write_memory_csv(path: str | Path, records: list[MemoryRecord]) -> None:
     output.parent.mkdir(parents=True, exist_ok=True)
     fields = list(MemoryRecord.__dataclass_fields__)
     with output.open("w", newline="", encoding="utf-8") as handle:
-        writer = csv.DictWriter(handle, fieldnames=fields)
+        writer = csv.DictWriter(handle, fieldnames=fields, lineterminator="\n")
         writer.writeheader()
         for record in records:
             writer.writerow(asdict(record))
-

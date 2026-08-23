@@ -1,5 +1,5 @@
 schema_version: 1
-data_root: /run/media/zhangb/My Passport/视频数据/数据
+data_root: /path/to/视频数据/数据
 video_subdir: 视频
 strong_motion_subdir: 强震仪
 pairing: same_filename_stem

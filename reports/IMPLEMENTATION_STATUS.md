@@ -94,7 +94,7 @@
 
 ### 未解决问题
 
-- 不足 16 帧的最终尾块尚由上层 pipeline 负责显式 padding/有效帧裁剪。
+- 最终尾块已由上层 pipeline 显式 padding 并按有效帧裁剪；尚未在真实摄像头断流场景做板端验证。
 - GitHub 认证仍缺失。
 
 ### 下一阶段建议
@@ -275,3 +275,186 @@
 ### 下一阶段建议
 
 - 配对强震仪记录，估计时间偏移并建立 group-split PGA baseline。
+
+## Phase G
+
+### 完成内容
+
+- 建立 94 条记录的数据清单：79 条直接配对、2 条 split sensor、13 条缺强震仪记录。
+- 在 242 上完成 10 条真实视频、13,718 帧的完整 CoTracker/common/local/feature batch。
+- 实现全强震记录 containment 搜索，同时比较加速度 proxy 与积分位移域，并明确多重搜索偏差。
+- 实现 single-coefficient、Ridge、Huber、模型序列化、record/event group K-fold、PGA 分箱混淆矩阵与分组误差。
+- 对齐相关低于 0.4 的记录 6、16、85 被显式拒绝进入研究 baseline。
+
+### 修改文件
+
+- `seismic_motion/pga/records.py`: 强震记录读取、PGA 定义和配对发现。
+- `seismic_motion/pga/alignment.py`: 轴/符号/时间偏移和位移域候选对齐。
+- `seismic_motion/pga/model.py`: 简单经验模型、group split 和误差指标。
+- `scripts/run_pga_feature_batch.py`: 真实视频批量特征提取。
+- `seismic_motion/cli/evaluate_pga.py`: 质量过滤和 group-CV 报告。
+- `runs/20260823-pga-real/`, `runs/20260823-pga-evaluation/`: 紧凑证据。
+
+### 关键设计决策
+
+- 强震仪 horizontal-vector peak 是真值；视频二阶导数只作为输入特征，不冒充物理 PGA。
+- 全记录最大相关只称 exploratory candidate；不声称已证明时钟同步。
+- 预声明最简单单系数为 primary；复杂模型失败结果不隐藏。
+- 缺失几何尺度时，离线 research-only 评估可运行，但保存模型仍 `requires_scale=true`，部署直接拒绝。
+
+### 测试
+
+- command: 242 真实 batch + 本地 `evaluate_pga` + unit/group-leakage/model round-trip tests。
+- passed/failed: 10/10 视频完成；7/10 对齐候选通过阈值；33 项当前全量测试通过。
+- metrics: primary MAE 94.4 gal，RMSE 118.1 gal，factor-2 71.4%，Spearman 0.464。
+
+### 性能
+
+- latency: 1709 blocks；mean 180.5、p50 160.2、p95 247.5、p99 445.5、max 6015.0 ms。
+- memory: live batch snapshot peak RSS 1,267,432 kB，GPU memory 3906 MiB；不是逐 block 曲线。
+- throughput: p95 小于 30 FPS 的 266.7 ms budget，但 p99/最大超限；共享 CPU load 约 98，不能验收实时性。
+
+### 与 baseline 的数值差异
+
+- 相比最初 ±2 s 假设，完整 containment 搜索在多条记录找到约 6–20 s 候选；记录 6 为 68.35 s，说明文件范围不等于事件起点近同步。
+- 复杂 Ridge/Huber 在全 10 条未过滤敏感性运行发生严重外推；质量过滤后仍无有意义相关性，单系数更稳健。
+
+### 未解决问题
+
+- 只有 7 条可靠候选、同一未知 setup；无法评估跨相机/跨站点泛化。
+- 几何尺度、camera/mounting/site metadata 和独立同步证据缺失；Milestone 4 仅通过“接口/真值/group split”，模型有效性未通过。
+
+### 下一阶段建议
+
+- 采集同步脉冲/共同触发、标尺与相机安装 metadata，再扩大按 event/camera/site 分组的数据量。
+
+## Phase H
+
+### 完成内容
+
+- 完成 V100S PC baseline、真实 batch 资源快照与 10 分钟 bounded buffer/queue fast-forward。
+- 实现三 worker 实时 runner、固定容量队列、过载停止、标准 timing/memory/queue/manifest 输出。
+- 冻结 RK3588 realtime/low-compute 配置与板端采集字段。
+
+### 修改文件
+
+- `seismic_motion/runtime/pipeline.py`: 完整离线有界流水线和 provenance。
+- `seismic_motion/runtime/realtime.py`: 实时捕获/跟踪/写盘与 silent-drop 防护。
+- `benchmarks/runtime/streaming_stability.py`: 10 分钟逻辑快进稳定性。
+- `reports/pc_stability.md`, `reports/rk3588_profiling.md`: 已测与阻塞边界。
+
+### 关键设计决策
+
+- 离线吞吐不能冒充 realtime；共享服务器压力结果也不作为可控验收。
+- overload policy 是显式停止并拒绝 PGA，不任意丢帧破坏时间轴。
+
+### 测试
+
+- command: 18,000-frame fast-forward、真实 batch、realtime audit-contract unit test。
+- passed/failed: bounded data-structure scope passed；RK3588 milestone blocked。
+- metrics: buffer 最终 16，queue max/capacity 2/2，72 次拒绝全部计数，RSS slope 0.00185 MB/min。
+
+### 性能
+
+- latency: controlled rendered V100S p95 128.5–141.8 ms/block。
+- memory: fast-forward 43.535 -> 44.125 MB；tracker history 由 reseed 限制到 528 帧。
+- throughput: PC controlled rendered cases 满足 266.7 ms budget。
+
+### 与 baseline 的数值差异
+
+- 官方 online core 的历史 tensor 每 call 增长 8 帧；wrapper 将历史变为可审计固定上限。
+
+### 未解决问题
+
+- 无 RK3588 设备，无法记录 SoC/OS/governor/driver/temperature/throttling 或 30 分钟持续性能。
+
+### 下一阶段建议
+
+- 设备可用后严格按 `configs/rk3588_realtime.yaml` 运行 10/30 分钟验收。
+
+## Phase I
+
+### 完成内容
+
+- 自动扫描本地 CoTracker source call chain，并导出固定 shape feature encoder ONNX opset 17。
+- 运行 ONNX checker 与 PyTorch/ONNXRuntime 数值比较，生成带 shape inference 的实际算子表。
+- 识别 full tracker 中 GridSample/Einsum 风险和 encoder 中 Resize/InstanceNormalization 转换审查项。
+
+### 修改文件
+
+- `seismic_motion/deployment/operator_audit.py`: source/ONNX 算子与形状清单。
+- `scripts/export_feature_encoder.py`: encoder 边界导出与确定性 reference。
+- `scripts/validate_feature_encoder_onnx.py`: ABI 隔离的 ONNXRuntime 验证。
+- `reports/onnx_ops.csv`, `reports/rknn_compatibility.md`: 审计结果。
+
+### 关键设计决策
+
+- 242 共享环境 NumPy 2/ONNXRuntime ABI 不兼容，不修改共享环境；用只读 Python 3.10 NumPy 1.26 path 分进程验证。
+- 未安装 RKNN Toolkit2 且无板，停止在 ONNX evidence，不声称 RKNN 支持。
+
+### 测试
+
+- command: fixed encoder export + ONNX checker + ONNXRuntime CPU inference。
+- passed/failed: passed。
+- metrics: max abs `1.997e-6`，mean abs `1.772e-7`，mean relative (`eps=1e-6`) `1.861e-5`。
+
+### 性能
+
+- latency/memory/throughput: 未做板端测量；ONNX 验证仅为数值验收。
+
+### 与 baseline 的数值差异
+
+- encoder ONNX 与 PyTorch 在固定输入上误差远小于已有 tracker subpixel RMSE；尚不能推导 full-track error。
+
+### 未解决问题
+
+- PyTorch 导出报告 InstanceNorm training-mode warning；虽 ONNXRuntime 数值通过，仍需真实 converter 检查。
+- RKNN conversion log、FP16/INT8 feature error 和 full-track regression 均缺失。
+
+### 下一阶段建议
+
+- 在匹配 RKNN Toolkit2 的独立环境转换 encoder，并在真实板上逐层/端到端比较。
+
+## Phase J
+
+### 完成内容
+
+- 冻结 encoder-NPU、sampling-CPU/Mali、correlation-MatMul、UpdateFormer-deferred 的分区配置。
+- 在 production-like shape 上验证 Einsum -> batched MatMul 候选。
+- 实现 synthetic/real-PGA 核心图、完整 audit-bundle generator 和 zip 输出。
+
+### 修改文件
+
+- `seismic_motion/deployment/correlation.py`: 等价 contraction 候选。
+- `benchmarks/deployment/evaluate_correlation_rewrite.py`: 数值与 host timing。
+- `configs/deployment_partition.yaml`: 分区成功定义和阻塞状态。
+- `scripts/build_audit_bundle.py`, `scripts/plot_run.py`, `scripts/plot_pga_evaluation.py`: 审核交付。
+
+### 关键设计决策
+
+- 不追求 full-model 100% NPU；以吞吐、延迟、精度、稳定性为成功条件。
+- MatMul 候选在进入 full tracker/ONNX/RKNN 前不替换上游代码。
+
+### 测试
+
+- command: local production-like correlation benchmark + audit bundle tests。
+- passed/failed: FP32 tensor equivalence passed；full-track/RKNN blocked。
+- metrics: max/mean abs/relative error 均 0；host mean 5.10 ms vs Einsum 5.78 ms。
+
+### 性能
+
+- latency: correlation host numbers only，不是 RK3588 estimate。
+- memory/throughput: 板端未测。
+
+### 与 baseline 的数值差异
+
+- standalone correlation contraction exact；track output error 显式为 null，未错误外推。
+
+### 未解决问题
+
+- RK3588 Milestone 5、30 分钟稳定性和 thermal throttling 完全阻塞。
+- GitHub 认证仍不可用，本地阶段提交尚未同步到 remote。
+
+### 下一阶段建议
+
+- 获取 RK3588 和 GitHub 凭据后，先 encoder RKNN，再 sampling fallback，最后 full-track regression 与持续实时验收。

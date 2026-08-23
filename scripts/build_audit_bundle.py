@@ -22,6 +22,10 @@ CORE_FILES = (
     "metrics.json",
     "input_manifest.json",
     "git_status.txt",
+    "batch_summary.json",
+    "alignment_summary.csv",
+    "runtime_summary.csv",
+    "pga_metrics_by_group.csv",
 )
 
 
@@ -98,6 +102,29 @@ def build_bundle(
             shutil.copy2(source, audit / name)
     manifest = _read_json(run / "manifest.json")
     metrics = _read_json(run / "metrics.json")
+    if not metrics:
+        metrics = _read_json(run / "pga_metrics.json")
+        if metrics:
+            shutil.copy2(run / "pga_metrics.json", audit / "metrics.json")
+    batch_summary = _read_json(run / "batch_summary.json")
+    diff_text = (run / "git_diff.patch").read_text(encoding="utf-8") if (run / "git_diff.patch").is_file() else ""
+    changed_paths = sorted(
+        {
+            line.split(" b/", 1)[1]
+            for line in diff_text.splitlines()
+            if line.startswith("diff --git a/") and " b/" in line
+        }
+    )
+    added_lines = sum(
+        1
+        for line in diff_text.splitlines()
+        if line.startswith("+") and not line.startswith("+++")
+    )
+    removed_lines = sum(
+        1
+        for line in diff_text.splitlines()
+        if line.startswith("-") and not line.startswith("---")
+    )
     timing_rows = _read_csv(run / "timing.csv")
     memory_rows = _read_csv(run / "memory.csv")
     queue_rows = _read_csv(run / "queue.csv")
@@ -138,6 +165,11 @@ def build_bundle(
     for row in motion_rows:
         quality = row.get("quality", "UNKNOWN")
         quality_counts[quality] = quality_counts.get(quality, 0) + 1
+    if not quality_counts and batch_summary.get("quality_frame_totals"):
+        quality_counts = {
+            str(name): int(count)
+            for name, count in batch_summary["quality_frame_totals"].items()
+        }
     with (audit / "motion_quality_summary.csv").open(
         "w", newline="", encoding="utf-8"
     ) as handle:
@@ -161,6 +193,12 @@ def build_bundle(
     tracker_timing = next(
         (row for row in timing_summary if row["metric"] == "tracker_ms"), {}
     )
+    if not tracker_timing and batch_summary.get("tracker_ms"):
+        tracker_timing = {
+            "metric": "tracker_ms",
+            "count": batch_summary.get("tracker_blocks"),
+            **batch_summary["tracker_ms"],
+        }
     total_timing = next(
         (row for row in timing_summary if row["metric"] == "total_pipeline_ms"), {}
     )
@@ -176,8 +214,14 @@ def build_bundle(
             queue_growth[column] = float(
                 np.polyfit(np.arange(values.size, dtype=float), values, 1)[0]
             )
-    dropped_frames = int(np.max(_numeric(queue_rows, "dropped_frames"), initial=0))
-    dropped_blocks = int(np.max(_numeric(queue_rows, "dropped_blocks"), initial=0))
+    dropped_frame_values = _numeric(queue_rows, "dropped_frames")
+    dropped_block_values = _numeric(queue_rows, "dropped_blocks")
+    dropped_frames = (
+        int(np.max(dropped_frame_values)) if dropped_frame_values.size else None
+    )
+    dropped_blocks = (
+        int(np.max(dropped_block_values)) if dropped_block_values.size else None
+    )
     overload_states = sorted(
         {row.get("overload_state", "") for row in queue_rows if row.get("overload_state")}
     )
@@ -196,6 +240,10 @@ def build_bundle(
         event_counts[name] = event_counts.get(name, 0) + 1
     peak_rss_values = _numeric(memory_rows, "peak_rss_mb")
     peak_rss = float(np.max(peak_rss_values)) if peak_rss_values.size else float("nan")
+    if not np.isfinite(peak_rss):
+        peak_kb = batch_summary.get("resource_snapshot", {}).get("batch_peak_rss_kb")
+        if peak_kb is not None:
+            peak_rss = float(peak_kb) / 1024.0
     baseline_metrics = _read_json(baseline_directory / "metrics.json") if baseline_directory else {}
     summary_lines = [
         f"# Audit summary: {run_id}",
@@ -210,20 +258,23 @@ def build_bundle(
         f"- Motion parameters: `{json.dumps(manifest.get('motion_parameters', {}), sort_keys=True)}`.",
         f"- Signal parameters: `{json.dumps(manifest.get('signal_parameters', {}), sort_keys=True)}`.",
         f"- PGA model: `{manifest.get('pga_model_version', None)}`.",
+        f"- Change summary: `{manifest.get('change_summary', 'not recorded')}`.",
+        f"- Working-tree patch: `{len(changed_paths)} files, +{added_lines}/-{removed_lines} lines`.",
+        f"- Changed paths: `{changed_paths[:30]}`.",
         "",
         "## Accuracy and quality",
         "",
         f"- Metrics: `{json.dumps(metrics, sort_keys=True)}`.",
         f"- Motion quality counts: `{json.dumps(quality_counts, sort_keys=True)}`.",
         f"- PGA rows included: `{len(pga_rows)}`.",
-        f"- Scale state: `{metrics.get('scale_state', 'unknown')}`.",
+        f"- Scale state: `{metrics.get('scale_state', manifest.get('scale_parameters', {}).get('method', 'unknown'))}`.",
         "",
         "## Runtime behavior",
         "",
         f"- Tracker latency summary: `{json.dumps(tracker_timing, sort_keys=True)}`.",
         f"- Total latency summary: `{json.dumps(total_timing, sort_keys=True)}`.",
         f"- Queue depth slopes per row: `{json.dumps(queue_growth, sort_keys=True)}`.",
-        f"- Dropped frames / blocks: `{dropped_frames}` / `{dropped_blocks}`.",
+        f"- Dropped frames / blocks: `{dropped_frames if dropped_frames is not None else 'not recorded'}` / `{dropped_blocks if dropped_blocks is not None else 'not recorded'}`.",
         f"- Overload states: `{overload_states}`.",
         f"- Peak RSS: `{peak_rss if np.isfinite(peak_rss) else 'not recorded'} MB`.",
         f"- Event counts: `{json.dumps(event_counts, sort_keys=True)}`.",

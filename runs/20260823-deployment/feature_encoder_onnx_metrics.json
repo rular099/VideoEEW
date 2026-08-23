@@ -1,0 +1,28 @@
+{
+  "fixed_shape": true,
+  "input_shape": [
+    1,
+    3,
+    384,
+    512
+  ],
+  "max_abs_error": 1.996755599975586e-06,
+  "max_relative_error_eps_1e-6": 0.3926544487476349,
+  "mean_abs_error": 1.7718485878503998e-07,
+  "mean_relative_error_eps_1e-6": 1.8605194782139733e-05,
+  "numpy_version": "1.26.4",
+  "onnx_checker_passed": true,
+  "onnx_path": "/tmp/videoeew-encoder/cotracker_feature_encoder.onnx",
+  "onnx_sha256": "688ec661990154748b3388597cf2eef0bbe4f2b9ee3eeb14b2956fedfa4958c1",
+  "onnx_size_bytes": 10578669,
+  "onnxruntime_checked": true,
+  "onnxruntime_version": "1.16.3",
+  "opset": 17,
+  "output_shape": [
+    1,
+    128,
+    96,
+    128
+  ],
+  "reference_path": "/tmp/videoeew-encoder/cotracker_feature_encoder.reference.npz"
+}

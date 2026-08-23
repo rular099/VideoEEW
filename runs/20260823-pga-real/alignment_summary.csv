@@ -1,0 +1,11 @@
+record_id,preferred_domain,preferred_offset_s,preferred_correlation,preferred_status,acceleration_correlation,displacement_correlation,search_min_s,search_max_s,interpretation
+16,displacement,20.33,0.3479285158802205,LOW_CORRELATION,0.20382130806968451,0.3479285158802205,0.01,94.06,exploratory candidate; full-record search is not synchronization proof
+26,displacement,5.929999999999999,0.7362518933149896,ALIGNED,0.7210507901749361,0.7362518933149896,0.01,35.5,exploratory candidate; full-record search is not synchronization proof
+48,displacement,7.509999999999999,0.6453010726139387,ALIGNED,0.3415578808406248,0.6453010726139387,0.01,41.08375893769153,exploratory candidate; full-record search is not synchronization proof
+6,displacement,68.35,0.32782439267932817,LOW_CORRELATION,0.07960510869026236,0.32782439267932817,0.01,97.76176176176176,exploratory candidate; full-record search is not synchronization proof
+61,displacement,10.149999999999999,0.49590492758197474,ALIGNED,0.3514359680980096,0.49590492758197474,0.01,35.34,exploratory candidate; full-record search is not synchronization proof
+65,displacement,10.209999999999999,0.5763295779436213,ALIGNED,0.46724709709505513,0.5763295779436213,0.01,35.6,exploratory candidate; full-record search is not synchronization proof
+69,displacement,6.329999999999999,0.5211144201758982,ALIGNED,0.46274252946533323,0.5211144201758982,0.01,32.131131131131134,exploratory candidate; full-record search is not synchronization proof
+71,displacement,8.169999999999998,0.604216737980169,ALIGNED,0.39103235134180303,0.604216737980169,0.01,39.019999999999996,exploratory candidate; full-record search is not synchronization proof
+84,displacement,7.309999999999999,0.40682975976387226,ALIGNED,0.20923853975146425,0.40682975976387226,0.01,22.4,exploratory candidate; full-record search is not synchronization proof
+85,acceleration,0.57,0.18591215219479512,LOW_CORRELATION,0.18591215219479512,0.1787236500542284,0.01,7.520000000000003,exploratory candidate; full-record search is not synchronization proof

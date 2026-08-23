@@ -17,5 +17,22 @@ seismic_motion/runtime/metrics.py
 scripts/build_audit_bundle.py
 ```
 
-Paths will be checked off in `IMPLEMENTATION_STATUS.md` as phases land.
+Additional deployment and dataset entry points are:
 
+```text
+seismic_motion/pga/records.py
+seismic_motion/pga/alignment.py
+seismic_motion/deployment/feature_encoder.py
+seismic_motion/deployment/correlation.py
+seismic_motion/deployment/operator_audit.py
+seismic_motion/runtime/realtime.py
+scripts/run_pga_feature_batch.py
+scripts/recompute_alignments.py
+scripts/export_feature_encoder.py
+scripts/validate_feature_encoder_onnx.py
+scripts/audit_operators.py
+scripts/plot_run.py
+```
+
+Phase-by-phase evidence and blocked items are recorded in
+`reports/IMPLEMENTATION_STATUS.md`.

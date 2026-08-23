@@ -1,0 +1,45 @@
+{
+  "checkpoint_sha256": "205d34789f19699d64b22cf93f9b697f15f28d4025240e31532e504109837218",
+  "change_summary": "real-video CoTracker feature extraction, full-record candidate alignment, quality-filtered group-CV PGA baseline, and auditable runtime/deployment scaffolding",
+  "config_sha256": {
+    "pga_train": "79b3db3a3f6d22f32edd53c999bcafd39b7825be7770f506155318d097526a78",
+    "real_video_eval": "367664ce89b23034849b47a84b968fa0c9042a9ba4ed856fb713141c8b6a248d"
+  },
+  "cotracker_commit": "82e02e8029753ad4ef13cf06be7f4fc5facdda4d",
+  "device": "server-242 Tesla V100S GPU 3 extraction; local CPU regression evaluation",
+  "git_commit": "ded4c995d1f5649acd09dd76bf354b556b8ae689",
+  "git_dirty": true,
+  "input_id": "records 6,16,26,48,61,65,69,71,84,85 from the private paired dataset",
+  "motion_parameters": {
+    "global_model": "similarity",
+    "quality_gate": true,
+    "ransac_threshold_px": 1.5,
+    "use_ransac": true
+  },
+  "pga_model_version": "videoeew-pga-v1-single-coefficient-research-only",
+  "run_id": "20260823-pga-evaluation",
+  "scale_parameters": {
+    "method": "uncalibrated",
+    "deployment_prediction_allowed": false
+  },
+  "signal_parameters": {
+    "bandpass_hz": [0.3, 8.0],
+    "causal": false,
+    "derivative_method": "local_polynomial"
+  },
+  "software_versions": {
+    "server_python": "3.10.16",
+    "server_torch": "2.6.0+cu124",
+    "server_numpy": "2.0.1",
+    "local_numpy": "1.26.4",
+    "local_scipy": "1.14.1"
+  },
+  "start_time": "not_recorded_before_batch_start",
+  "tracker_parameters": {
+    "iters": 6,
+    "model_resolution": [384, 512],
+    "num_points": 32,
+    "step": 8,
+    "window_len": 16
+  }
+}

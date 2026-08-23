@@ -1,0 +1,44 @@
+{
+  "correlation_shape": [
+    1,
+    16,
+    32,
+    9,
+    9,
+    128
+  ],
+  "device": "cpu",
+  "dtype": "torch.float32",
+  "max_abs_error": 0.0,
+  "max_relative_error_eps_1e-6": 0.0,
+  "mean_abs_error": 0.0,
+  "mean_relative_error_eps_1e-6": 0.0,
+  "output_shape": [
+    1,
+    16,
+    32,
+    9,
+    9,
+    7,
+    7
+  ],
+  "support_shape": [
+    1,
+    32,
+    7,
+    7,
+    128
+  ],
+  "timing": {
+    "batched_matmul": {
+      "mean_ms": 5.096919648349285,
+      "p95_ms": 5.495687574148178
+    },
+    "einsum": {
+      "mean_ms": 5.7823192328214645,
+      "p95_ms": 6.616257503628731
+    }
+  },
+  "track_output_error_px": null,
+  "track_output_error_reason": "candidate is not substituted into the full tracker until ONNX/RKNN conversion is available"
+}

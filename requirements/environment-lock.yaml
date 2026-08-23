@@ -1,0 +1,41 @@
+schema_version: 1
+captured_date: '2026-08-23'
+external_cotracker:
+  commit: 82e02e8029753ad4ef13cf06be7f4fc5facdda4d
+  checkpoint: scaled_online.pth
+  checkpoint_sha256: 205d34789f19699d64b22cf93f9b697f15f28d4025240e31532e504109837218
+local_unit_and_analysis:
+  os: Arch Linux 7.0.3-arch1-2 x86_64
+  python: 3.11.11
+  packages:
+    numpy: 1.26.4
+    scipy: 1.14.1
+    PyYAML: 6.0.2
+    matplotlib: 3.8.0
+    opencv-python: 4.12.0.88
+    pandas: 2.3.0
+    psutil: 5.9.0
+    torch: 2.11.0
+server_242_tracking:
+  architecture: x86_64
+  python_environment: /opt/zb/miniconda3/envs/dtbf_zb
+  python: 3.10.16
+  gpu: Tesla V100S-PCIE-32GB
+  packages:
+    numpy: 2.0.1
+    torch: 2.6.0+cu124
+    imageio: 2.37.0
+    onnx: 1.17.0
+    onnxruntime: 1.16.3
+  known_incompatibility: onnxruntime_1.16.3_was_built_for_numpy_1_and_cannot_import_with_numpy_2.0.1
+onnx_validation_read_only_composition:
+  python: /opt/zb/miniconda3/envs/dtbf_zb/bin/python
+  numpy_site_packages: /opt/zb/miniconda3/envs/phasenet/lib/python3.10/site-packages
+  numpy: 1.26.4
+  onnx: 1.17.0
+  onnxruntime: 1.16.3
+  shared_environments_modified: false
+rk3588:
+  status: BLOCKED_NO_DEVICE_ACCESS
+  toolkit2_version: unavailable
+  runtime_version: unavailable

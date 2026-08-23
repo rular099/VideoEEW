@@ -1,0 +1,27 @@
+{
+  "algorithm": "single_coefficient",
+  "alpha": 1.0,
+  "coefficient": [
+    0.04991401217455982
+  ],
+  "feature_mean": [
+    4477.193707101905
+  ],
+  "feature_names": [
+    "common_peak_acceleration_px_s2"
+  ],
+  "feature_scale": [
+    1928.074451378776
+  ],
+  "intercept": 0.0,
+  "log_target": false,
+  "model_version": "videoeew-pga-v1",
+  "requires_scale": true,
+  "training_metadata": {
+    "deployment_prediction_allowed": false,
+    "group_column": "record_id",
+    "offline_uncalibrated_evaluation": true,
+    "selection_policy": "predeclared simple baseline; not selected on test-fold performance",
+    "unique_groups": 7
+  }
+}

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import hashlib
 import importlib.metadata
+from functools import lru_cache
 import json
 import platform
 import subprocess
@@ -12,12 +13,22 @@ from pathlib import Path
 from typing import Any, Iterable
 
 
-def sha256_file(path: str | Path, chunk_size: int = 1024 * 1024) -> str:
+@lru_cache(maxsize=32)
+def _sha256_file_cached(
+    resolved_path: str, size: int, modification_time_ns: int, chunk_size: int
+) -> str:
+    _ = (size, modification_time_ns)  # Included in the cache key.
     digest = hashlib.sha256()
-    with Path(path).open("rb") as handle:
+    with Path(resolved_path).open("rb") as handle:
         while chunk := handle.read(chunk_size):
             digest.update(chunk)
     return digest.hexdigest()
+
+
+def sha256_file(path: str | Path, chunk_size: int = 1024 * 1024) -> str:
+    source = Path(path).resolve()
+    stat = source.stat()
+    return _sha256_file_cached(str(source), stat.st_size, stat.st_mtime_ns, chunk_size)
 
 
 def git_state(repository: str | Path) -> dict[str, Any]:
@@ -80,4 +91,3 @@ def write_json(path: str | Path, value: Any) -> None:
         json.dumps(value, indent=2, ensure_ascii=False, sort_keys=True) + "\n",
         encoding="utf-8",
     )
-
