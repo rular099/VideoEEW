@@ -1,0 +1,33 @@
+{
+  "checkpoint_sha256": "205d34789f19699d64b22cf93f9b697f15f28d4025240e31532e504109837218",
+  "config_sha256": "9eb32f2ced267f758514499cf43401596db9c335ef4c34d73f39d0053b22ea6b",
+  "device": "server-242 Tesla V100S-PCIE-32GB physical GPU 3",
+  "git_commit": "e759006520b785ae92931522db5b2849de390075",
+  "git_dirty": false,
+  "input_id": "upstream-assets-apple-first-16",
+  "motion_parameters": {
+    "enabled": false
+  },
+  "pga_model_version": null,
+  "run_id": "20260823-phasea-official-baseline",
+  "signal_parameters": {
+    "enabled": false
+  },
+  "software_versions": {
+    "cuda": "12.4",
+    "imageio": "2.37.0",
+    "numpy": "2.0.1",
+    "python": "3.10.16",
+    "torch": "2.6.0+cu124"
+  },
+  "start_time": "2026-08-23T10:00:00+08:00",
+  "tracker_parameters": {
+    "checkpoint": "scaled_online.pth",
+    "grid_size": 6,
+    "iters": 6,
+    "model_resolution": [384, 512],
+    "num_points": 36,
+    "step": 8,
+    "window_len": 16
+  }
+}

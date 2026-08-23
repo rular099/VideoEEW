@@ -1,0 +1,20 @@
+schema_version: 1
+seed: 0
+input:
+  path: co-tracker/assets/apple.mp4
+  frame_range: [0, 16]
+  sha256: c7f48c5cfb1479e1dbc1df2373d5cad4f55c198bbdb379da0ece10087971542a
+tracker:
+  backend: upstream_cotracker3_online
+  checkpoint: scaled_online.pth
+  checkpoint_sha256: 205d34789f19699d64b22cf93f9b697f15f28d4025240e31532e504109837218
+  grid_size: 6
+  num_points: 36
+  window_len: 16
+  step: 8
+  iters: 6
+  model_resolution: [384, 512]
+device:
+  host: server-242
+  gpu_physical_index: 3
+

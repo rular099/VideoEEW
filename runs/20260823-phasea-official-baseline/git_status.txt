@@ -1,0 +1,9 @@
+repository=VideoEEW
+commit=e759006520b785ae92931522db5b2849de390075
+dirty=false
+
+repository=co-tracker
+commit=82e02e8029753ad4ef13cf06be7f4fc5facdda4d
+local_tracked_diff=false
+user_untracked_files_preserved=true
+

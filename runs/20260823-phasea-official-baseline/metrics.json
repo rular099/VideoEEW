@@ -1,0 +1,10 @@
+{
+  "max_abs_track_diff_px": 0.0,
+  "mean_abs_track_diff_px": 0.0,
+  "run1_ms_including_warmup": 585.6012478470802,
+  "run2_ms_warm": 139.4822597503662,
+  "track_shape": [1, 16, 36, 2],
+  "visibility_disagreement": 0,
+  "visible_fraction": 0.8576388955116272
+}
+

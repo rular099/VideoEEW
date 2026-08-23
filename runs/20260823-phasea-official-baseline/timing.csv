@@ -1,0 +1,4 @@
+timestamp,block_index,capture_ms,preprocess_ms,encoder_ms,tracker_ms,motion_fit_ms,signal_ms,pga_ms,total_pipeline_ms,end_to_end_latency_ms
+2026-08-23T10:00:00+08:00,0,0,0,,585.601,0,0,0,585.601,
+2026-08-23T10:00:01+08:00,1,0,0,,139.482,0,0,0,139.482,
+
