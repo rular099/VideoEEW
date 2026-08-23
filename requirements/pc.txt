@@ -1,0 +1,11 @@
+# Known-good starting point. Exact runtime versions are captured in each run.
+numpy>=1.26,<3
+PyYAML>=6.0
+scipy>=1.10
+opencv-python-headless>=4.8
+pandas>=2.0
+psutil>=5.9
+scikit-learn>=1.3
+torch>=2.1
+pytest>=8
+

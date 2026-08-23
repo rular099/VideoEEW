@@ -1,0 +1,31 @@
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.venv/
+venv/
+
+# Models and large generated artifacts are reproducible external inputs.
+*.pth
+*.pt
+*.onnx
+*.rknn
+checkpoints/
+data/
+
+# Keep small audit tables/manifests, not large binary run products.
+runs/**/tracks.npz
+runs/**/residual_motion.npz
+runs/**/filtered_signals.npz
+runs/**/plots/*.mp4
+runs/**/logs/*.log
+audit/*.zip
+
+# Local editor and operating-system metadata.
+.idea/
+.vscode/
+.DS_Store
+._*
+
