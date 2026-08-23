@@ -1,0 +1,21 @@
+schema_version: 1
+seed: 7
+spec: benchmarks/synthetic/spec.yaml
+output_root: runs
+tracker:
+  backend: oracle_then_cotracker
+  num_points: [16, 32, 64]
+  window_len: 16
+  step: 8
+  iters: [6]
+  model_resolution: [384, 512]
+metrics:
+  - point_tracking_rmse_px
+  - amplitude_error_px
+  - frequency_error_hz
+  - phase_error_rad
+  - common_translation_error_px
+  - common_rotation_error_deg
+  - residual_motion_error_px
+  - visibility_failure_rate
+

@@ -1,0 +1,22 @@
+{
+  "block_time_ms": {
+    "first_with_model_load": 6693.794725462794,
+    "max_warm": 129.25392575562,
+    "mean_warm": 125.30968971550465,
+    "p95_warm": 128.52690443396568
+  },
+  "common_amplitude_error_px": 0.02395763342714896,
+  "common_phase_error_rad": 0.048095016827545405,
+  "frames_evaluated": 56,
+  "local_residual_rmse_px": 0.31029255518991294,
+  "motion_good_fraction": 1.0,
+  "points": 32,
+  "reseed_events": [],
+  "tracking_max_error_px": 1.600862979888916,
+  "tracking_mean_error_px": 0.2629574239253998,
+  "tracking_p95_error_px": 1.0850385427474976,
+  "tracking_rmse_px": 0.4368152618408203,
+  "upstream_history_bound_frames": 528,
+  "visibility_disagreement_fraction": 0.0
+}
+

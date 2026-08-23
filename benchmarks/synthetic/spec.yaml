@@ -1,0 +1,27 @@
+schema_version: 1
+seed: 7
+duration_s: 4.0
+image_size: [240, 320]
+point_grid: [8, 10]
+translation:
+  amplitudes_px: [0.1, 0.25, 0.5, 1.0, 2.0, 5.0]
+  frequencies_hz: [0.5, 1.0, 2.0, 4.0, 6.0, 8.0]
+  fps_values: [25.0, 30.0, 60.0]
+rotation:
+  amplitudes_deg: [0.05, 0.1, 0.25, 0.5, 1.0]
+local_motion:
+  point_fraction: 0.2
+  amplitude_px: 1.0
+  frequency_hz: 3.0
+  phase_rad: 0.7
+degradation:
+  occlusion_fraction: 0.15
+  blur_kernel: 7
+  illumination_amplitude: 0.35
+cases:
+  - translation
+  - translation_local
+  - rotation
+  - translation_rotation_local
+  - degraded
+

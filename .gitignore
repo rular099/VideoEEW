@@ -16,9 +16,7 @@ checkpoints/
 data/
 
 # Keep small audit tables/manifests, not large binary run products.
-runs/**/tracks.npz
-runs/**/residual_motion.npz
-runs/**/filtered_signals.npz
+runs/**/*.npz
 runs/**/plots/*.mp4
 runs/**/logs/*.log
 audit/*.zip
@@ -28,4 +26,3 @@ audit/*.zip
 .vscode/
 .DS_Store
 ._*
-

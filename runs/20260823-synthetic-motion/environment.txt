@@ -1,0 +1,9 @@
+local_python=3.11.11
+local_numpy=1.26.4
+local_scipy=1.14.1
+local_opencv=4.12.0
+server_python=3.10.16
+server_torch=2.6.0+cu124
+server_cuda=12.4
+cotracker_commit=82e02e8029753ad4ef13cf06be7f4fc5facdda4d
+

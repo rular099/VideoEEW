@@ -1,0 +1,33 @@
+{
+  "checkpoint_sha256": "205d34789f19699d64b22cf93f9b697f15f28d4025240e31532e504109837218",
+  "config_sha256": "e6a3df7ec335fea0c4e4ca9f51534c68852ac85c8e889c9e1c86a9f1b682bd91",
+  "device": "local CPU oracle plus server-242 V100S GPU 3 CoTracker",
+  "git_commit": "e9c2389",
+  "git_dirty": false,
+  "input_id": "deterministic-synthetic-seed-7-and-11",
+  "motion_parameters": {
+    "global_model": "similarity",
+    "quality_gate": true,
+    "ransac": true
+  },
+  "pga_model_version": null,
+  "run_id": "20260823-synthetic-motion",
+  "signal_parameters": {
+    "bandpass_hz": [0.3, 8.0],
+    "derivative_method": "local_polynomial"
+  },
+  "software_versions": {
+    "local_numpy": "1.26.4",
+    "local_opencv": "4.12.0",
+    "local_scipy": "1.14.1",
+    "server_torch": "2.6.0+cu124"
+  },
+  "start_time": "2026-08-23T11:00:00+08:00",
+  "tracker_parameters": {
+    "iters": 6,
+    "model_resolution": [384, 512],
+    "num_points": 32,
+    "step": 8,
+    "window_len": 16
+  }
+}

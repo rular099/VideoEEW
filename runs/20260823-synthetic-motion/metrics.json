@@ -1,0 +1,27 @@
+{
+  "scope_notes": {
+    "oracle_matrix": "tests geometry and signal code with exact tracks; it is not a CoTracker accuracy claim",
+    "rendered_cotracker": "tests the upstream scaled online checkpoint on two rendered cases",
+    "scale": "UNCALIBRATED",
+    "pga": "not evaluated in this run"
+  },
+  "oracle_matrix": {
+    "case_count": 116,
+    "max_common_point_rmse_px": 4.077966074129001e-06,
+    "max_common_rotation_rmse_deg": 2.8619947265274106e-07,
+    "max_residual_motion_rmse_px": 4.211945251879557e-06,
+    "max_subpixel_amplitude_error_px": 4.71753314389145e-06
+  },
+  "cotracker_translation": {
+    "tracking_rmse_px": 0.0941900685429573,
+    "common_amplitude_error_px": 0.034345064851910245,
+    "warm_p95_block_ms": 141.80780947208405
+  },
+  "cotracker_translation_rotation_local": {
+    "tracking_rmse_px": 0.4368152618408203,
+    "common_amplitude_error_px": 0.02395763342714896,
+    "local_residual_rmse_px": 0.31029255518991294,
+    "warm_p95_block_ms": 128.52690443396568
+  }
+}
+

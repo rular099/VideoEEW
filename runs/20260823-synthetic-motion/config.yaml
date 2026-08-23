@@ -1,0 +1,33 @@
+schema_version: 1
+seed: 7
+synthetic_spec: benchmarks/synthetic/spec.yaml
+oracle_matrix:
+  translation_amplitudes_px: [0.1, 0.25, 0.5, 1.0, 2.0, 5.0]
+  translation_frequencies_hz: [0.5, 1.0, 2.0, 4.0, 6.0, 8.0]
+  fps_values: [25.0, 30.0, 60.0]
+  rotation_amplitudes_deg: [0.05, 0.1, 0.25, 0.5, 1.0]
+  additional_cases: [translation_local, translation_rotation_local, degraded]
+cotracker_cases:
+  image_size: [96, 128]
+  frames: 56
+  points: 32
+  fps: 30.0
+  translation_amplitude_px: 0.5
+  translation_frequency_hz: 2.0
+  rotation_amplitude_deg: 0.1
+motion:
+  model: similarity
+  use_ransac: true
+  ransac_threshold_px: 0.15
+  min_valid_tracks: 10
+  min_inlier_ratio: 0.6
+  min_spatial_coverage: 0.05
+signal:
+  bandpass_hz: [0.3, 8.0]
+  derivative_method: local_polynomial
+  evaluation_filter: offline_zero_phase
+scale:
+  state: UNCALIBRATED
+pga:
+  enabled: false
+

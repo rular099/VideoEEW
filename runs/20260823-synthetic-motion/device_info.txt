@@ -1,0 +1,4 @@
+oracle_device=local CPU
+cotracker_device=server-242 Tesla V100S-PCIE-32GB physical GPU 3
+rk3588_device=unavailable
+

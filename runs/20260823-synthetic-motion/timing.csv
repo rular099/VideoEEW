@@ -1,0 +1,6 @@
+timestamp,frame/block index,capture_ms,preprocess_ms,encoder_ms,tracker_ms,motion_fit_ms,signal_ms,pga_ms,total_pipeline_ms,end_to_end_latency_ms
+2026-08-23T11:00:00+08:00,translation_warm_mean,0,0,,134.466,,,0,134.466,
+2026-08-23T11:01:00+08:00,translation_warm_p95,0,0,,141.808,,,0,141.808,
+2026-08-23T11:02:00+08:00,combined_warm_mean,0,0,,125.310,,,0,125.310,
+2026-08-23T11:03:00+08:00,combined_warm_p95,0,0,,128.527,,,0,128.527,
+

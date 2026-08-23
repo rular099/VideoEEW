@@ -1,0 +1,14 @@
+{
+  "cotracker_rendered_cases": [
+    "translation",
+    "translation_rotation_local"
+  ],
+  "generator": "benchmarks/synthetic/generator.py",
+  "oracle_case_count": 116,
+  "rendered_frames_per_case": 56,
+  "rendered_image_size": [96, 128],
+  "seed_oracle": 7,
+  "seed_rendered": 11,
+  "spec": "benchmarks/synthetic/spec.yaml"
+}
+

@@ -1,0 +1,9 @@
+repository=VideoEEW
+baseline_commit=e9c2389
+dirty_at_run_start=false
+dirty_at_artifact_write=true
+
+repository=co-tracker
+commit=82e02e8029753ad4ef13cf06be7f4fc5facdda4d
+modified_by_videoeew=false
+
