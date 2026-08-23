@@ -84,6 +84,17 @@ class SlidingFrameBuffer:
             frame_indices=np.asarray(self._indices, dtype=np.int64),
         )
 
+    def retained(self) -> FrameWindow:
+        """Return all currently retained frames, including a partial first window."""
+
+        if not self._frames:
+            raise RuntimeError("buffer is empty")
+        return FrameWindow(
+            frames=np.stack(tuple(self._frames)),
+            timestamps=np.asarray(self._timestamps, dtype=np.float64),
+            frame_indices=np.asarray(self._indices, dtype=np.int64),
+        )
+
 
 class AuditedBoundedQueue(Generic[T]):
     """A bounded queue that counts and exposes every rejected enqueue."""
@@ -134,4 +145,3 @@ class AuditedBoundedQueue(Generic[T]):
             "max_observed_depth": self.max_observed_depth,
             "rejected_items": self.rejected_items,
         }
-

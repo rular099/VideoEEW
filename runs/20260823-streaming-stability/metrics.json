@@ -1,0 +1,25 @@
+{
+  "emitted_windows": 2249,
+  "explicit_overload_events_observed": 72,
+  "fps": 30.0,
+  "frame_buffer_capacity": 16,
+  "frame_buffer_final_size": 16,
+  "logical_duration_s": 600.0,
+  "pass": true,
+  "queue": {
+    "capacity": 2,
+    "depth": 0,
+    "max_observed_depth": 2,
+    "name": "tracker",
+    "rejected_items": 72
+  },
+  "rss_mb": {
+    "final": 44.125,
+    "initial": 43.53515625,
+    "maximum": 44.125,
+    "minimum": 43.53515625,
+    "post_warmup_slope_mb_per_min": 0.0018457937576052657
+  },
+  "scope": "bounded frame/queue fast-forward; tracker tensor cap is tested separately by reseed",
+  "total_frames": 18000
+}

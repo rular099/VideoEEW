@@ -1,0 +1,51 @@
+schema_version: 1
+seed: 0
+video:
+  fps_hint: 30.0
+  use_input_timestamps: true
+  roi: null
+tracker:
+  backend: cotracker3_online_partitioned
+  cotracker_root: null
+  checkpoint: null
+  num_points: 16
+  point_mode: corners
+  window_len: 16
+  step: 8
+  iters: 6
+  model_resolution: [384, 512]
+  visibility_threshold: 0.6
+  max_blocks_before_reseed: 64
+  encoder_backend: rknn_if_available
+  sampling_backend: mali_or_cpu_fallback
+motion:
+  global_model: similarity
+  min_valid_tracks: 8
+  use_ransac: true
+  ransac_threshold_px: 1.5
+  min_inlier_ratio: 0.6
+  min_spatial_coverage: 0.08
+  max_fit_rmse_px: 2.0
+  quality_gate: true
+scale:
+  method: uncalibrated
+  known_length_mm: null
+  known_length_px: null
+  valid_roi: null
+signal:
+  timestamp_aware: true
+  detrend: false
+  bandpass_hz: [0.3, 8.0]
+  derivative_method: local_polynomial
+  causal: true
+runtime:
+  target_fps: 30.0
+  max_end_to_end_latency_ms: 500.0
+  max_queue_blocks: 2
+  overload_policy: reject
+pga:
+  enabled: false
+  reject_without_scale: true
+  model_path: null
+hardware_status: BLOCKED_NO_RK3588_ACCESS
+

@@ -19,7 +19,7 @@ data/
 runs/**/*.npz
 runs/**/plots/*.mp4
 runs/**/logs/*.log
-audit/*.zip
+audit/
 
 # Local editor and operating-system metadata.
 .idea/

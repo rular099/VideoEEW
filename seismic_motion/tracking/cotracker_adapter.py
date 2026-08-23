@@ -145,6 +145,7 @@ class CoTrackerAdapter:
         timestamps: np.ndarray,
         frame_indices: np.ndarray,
         final: bool = False,
+        valid_frames: int | None = None,
     ) -> TrackBatch:
         self._load_backend()
         assert self._predictor is not None
@@ -156,6 +157,10 @@ class CoTrackerAdapter:
             raise ValueError("adapter requires complete tracker windows")
         if times.shape != (self.config.window_len,) or indices.shape != times.shape:
             raise ValueError("timestamps/frame_indices do not match the window")
+        if valid_frames is None:
+            valid_frames = self.config.window_len
+        if not 1 <= valid_frames <= self.config.window_len:
+            raise ValueError("valid_frames must be in [1, window_len]")
         chunk_start = int(indices[0])
         needs_initialization = self._query_points is None
         needs_reseed = self._blocks_since_reseed >= self.config.max_blocks_before_reseed
@@ -204,7 +209,7 @@ class CoTrackerAdapter:
         self._last_window_timestamps = times.copy()
         self._last_window_indices = indices.copy()
         self._blocks_since_reseed += 1
-        stable_end = int(indices[-1]) + 1 if final else chunk_start + self.config.step
+        stable_end = chunk_start + valid_frames if final else chunk_start + self.config.step
         output_start = chunk_start if self._next_output_frame is None else self._next_output_frame
         output_end = stable_end
         local_start = output_start - self._base_frame

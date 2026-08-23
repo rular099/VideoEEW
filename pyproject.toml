@@ -16,6 +16,8 @@ dependencies = [
 
 [project.optional-dependencies]
 pc = [
+  "imageio[ffmpeg]>=2.34",
+  "matplotlib>=3.8",
   "opencv-python-headless>=4.8",
   "pandas>=2.0",
   "psutil>=5.9",
@@ -35,4 +37,3 @@ include = ["seismic_motion*"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = "-ra"
-

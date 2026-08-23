@@ -1,0 +1,25 @@
+schema_version: 1
+data_root: /run/media/zhangb/My Passport/视频数据/数据
+video_subdir: 视频
+strong_motion_subdir: 强震仪
+pairing: same_filename_stem
+split_sensor_suffixes: ['-1', '-2']
+strong_motion:
+  sampling_rate_hz: 100.0
+  units: gal
+  pga_definition: horizontal_vector
+alignment:
+  initial_assumption: approximately_synchronous
+  search_mode: full_sensor_containment_after_small_offset_assumption_failed
+  min_correlation: 0.4
+  interpretation: exploratory_candidate_not_synchronization_proof
+  compare_domains: [acceleration, displacement]
+  compare_visual_channels: [x, y]
+  compare_sensor_channels: [EW, NS]
+metadata:
+  camera_id: unknown
+  site_id: shake_table_setup_unknown
+  event_group: record_id
+scale:
+  state: UNCALIBRATED
+  deployment_pga_output_allowed: false

@@ -49,8 +49,14 @@ def select_distributed_corners(
 
     try:
         import cv2
-    except ImportError as exc:  # pragma: no cover - exercised on deployment images
-        raise RuntimeError("OpenCV is required for automatic corner selection") from exc
+    except ImportError:  # pragma: no cover - exercised on server minimal environment
+        return _select_distributed_corners_scipy(
+            frame_rgb,
+            num_points,
+            roi=roi,
+            cells=cells,
+            min_distance=min_distance,
+        )
     frame = np.asarray(frame_rgb)
     if frame.ndim != 3 or frame.shape[2] != 3:
         raise ValueError("frame_rgb must have shape [H,W,3]")
@@ -110,6 +116,67 @@ def select_distributed_corners(
     return np.stack(selected)
 
 
+def _select_distributed_corners_scipy(
+    frame_rgb: np.ndarray,
+    num_points: int,
+    roi: tuple[int, int, int, int] | None,
+    cells: tuple[int, int] | None,
+    min_distance: float,
+) -> np.ndarray:
+    """Harris fallback for execution environments without OpenCV."""
+
+    try:
+        from scipy import ndimage
+    except ImportError as exc:
+        raise RuntimeError("automatic corner selection requires OpenCV or SciPy") from exc
+    frame = np.asarray(frame_rgb)
+    if frame.ndim != 3 or frame.shape[2] != 3:
+        raise ValueError("frame_rgb must have shape [H,W,3]")
+    height, width = frame.shape[:2]
+    x0, y0, x1, y1 = _roi_bounds(width, height, roi)
+    rgb = frame.astype(np.float64)
+    gray = 0.299 * rgb[..., 0] + 0.587 * rgb[..., 1] + 0.114 * rgb[..., 2]
+    gx = ndimage.sobel(gray, axis=1, mode="reflect")
+    gy = ndimage.sobel(gray, axis=0, mode="reflect")
+    xx = ndimage.gaussian_filter(gx * gx, sigma=1.2)
+    yy = ndimage.gaussian_filter(gy * gy, sigma=1.2)
+    xy = ndimage.gaussian_filter(gx * gy, sigma=1.2)
+    response = xx * yy - xy * xy - 0.04 * np.square(xx + yy)
+    response[:y0] = -np.inf
+    response[y1:] = -np.inf
+    response[:, :x0] = -np.inf
+    response[:, x1:] = -np.inf
+    local_max = response == ndimage.maximum_filter(
+        response, size=max(3, int(round(min_distance))), mode="nearest"
+    )
+    candidate_y, candidate_x = np.nonzero(local_max & np.isfinite(response))
+    order = np.argsort(response[candidate_y, candidate_x])[::-1]
+    if cells is None:
+        columns = max(1, int(np.ceil(np.sqrt(num_points * (x1 - x0) / max(y1 - y0, 1)))))
+        rows = max(1, int(np.ceil(num_points / columns)))
+    else:
+        rows, columns = cells
+    quota = max(1, int(np.ceil(num_points / (rows * columns))))
+    counts = np.zeros((rows, columns), dtype=int)
+    selected: list[np.ndarray] = []
+    for candidate_index in order:
+        px = float(candidate_x[candidate_index])
+        py = float(candidate_y[candidate_index])
+        column = min(columns - 1, int((px - x0) * columns / max(x1 - x0, 1)))
+        row = min(rows - 1, int((py - y0) * rows / max(y1 - y0, 1)))
+        if counts[row, column] >= quota:
+            continue
+        candidate = np.asarray([px, py], dtype=np.float32)
+        if all(np.linalg.norm(candidate - point) >= min_distance for point in selected):
+            selected.append(candidate)
+            counts[row, column] += 1
+        if len(selected) == num_points:
+            break
+    if len(selected) < num_points:
+        raise RuntimeError(f"found only {len(selected)} distributed corners; need {num_points}")
+    return np.stack(selected)
+
+
 def spatial_coverage(points: np.ndarray, width: int, height: int) -> float:
     """Axis-aligned point extent divided by image area, in [0, 1]."""
 
@@ -118,4 +185,3 @@ def spatial_coverage(points: np.ndarray, width: int, height: int) -> float:
         return 0.0
     extent = np.ptp(values, axis=0)
     return float(np.clip((extent[0] * extent[1]) / (width * height), 0.0, 1.0))
-

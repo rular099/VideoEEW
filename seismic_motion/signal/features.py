@@ -79,7 +79,7 @@ def extract_motion_features(
     residual_magnitude[~visible] = np.nan
     point_rms = np.sqrt(np.nanmean(np.square(residual_magnitude), axis=0))
     per_frame_active = np.nanmean(residual_magnitude > 3 * max(np.nanmedian(residual_magnitude), 1e-6), axis=1)
-    flags = sorted(set(quality_flags or ()))
+    flags = sorted(set(() if quality_flags is None else quality_flags))
     features: dict[str, float | str | int] = {
         "feature_version": FEATURE_VERSION,
         "window_start": float(times[0]),
@@ -113,4 +113,3 @@ def extract_motion_features(
         "causal": int(causal),
     }
     return features
-

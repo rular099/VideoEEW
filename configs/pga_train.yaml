@@ -1,0 +1,36 @@
+schema_version: 1
+feature_version: videoeew-motion-v1
+target: pga_horizontal_vector_gal
+algorithms: [single_coefficient, ridge, huber]
+primary_algorithm: huber
+pga_bins_gal: [0, 50, 100, 200, 400, 1000]
+report_group_columns:
+  - record_id
+  - camera_id
+  - site_id
+  - quality_flags
+  - alignment_status
+features:
+  - common_peak_acceleration_px_s2
+  - common_rms_acceleration_px_s2
+  - common_dominant_frequency_hz
+  - common_energy_0p3_1_hz
+  - common_energy_1_3_hz
+  - common_energy_3_8_hz
+  - residual_rms_px
+  - residual_peak_px
+  - mean_visibility
+  - mean_inlier_ratio
+  - mean_fit_rmse_px
+split:
+  method: group_kfold
+  group_column: record_id
+  folds: 5
+  seed: 0
+model:
+  log_target: true
+  ridge_alpha: 1.0
+  requires_scale: true
+uncalibrated_policy:
+  allow_offline_research_evaluation: true
+  allow_deployment_prediction: false

@@ -39,10 +39,13 @@ class SignalTests(unittest.TestCase):
         common = np.stack([np.sin(2 * np.pi * 2 * times), np.zeros_like(times)], axis=1)
         residual = np.zeros((times.size, 12, 2))
         visible = np.ones((times.size, 12), dtype=bool)
-        features = extract_motion_features(times, common, residual, visible)
+        features = extract_motion_features(
+            times, common, residual, visible, quality_flags=np.asarray(["GOOD"])
+        )
         self.assertAlmostEqual(features["common_dominant_frequency_hz"], 2.0, places=6)
         self.assertEqual(diagnose_timebase(times).estimated_missing_frames, 0)
         self.assertEqual(finite_difference(times, common).shape, common.shape)
+        self.assertEqual(features["quality_flags"], "GOOD")
 
 
 if __name__ == "__main__":
