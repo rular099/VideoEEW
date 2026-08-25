@@ -124,10 +124,8 @@ class RealtimeRunner:
     def _capture_worker(self, duration_s: float | None) -> None:
         try:
             import cv2
-        except ImportError as exc:  # pragma: no cover - board environment
-            self._record_event({"event": "capture_error", "reason": str(exc)})
-            self.stop_event.set()
-            return
+        except ImportError:  # File replay falls back to imageio below.
+            cv2 = None  # type: ignore[assignment]
         sources: list[str | int] = (
             list(self.source) if isinstance(self.source, list) else [self.source]
         )
@@ -141,18 +139,37 @@ class RealtimeRunner:
             for playlist_index, source in enumerate(sources):
                 if self.stop_event.is_set():
                     break
-                capture = cv2.VideoCapture(source)
-                if not capture.isOpened():
+                capture = None
+                iterator = None
+                if cv2 is not None:
+                    capture = cv2.VideoCapture(source)
+                    if not capture.isOpened():
+                        self._record_event(
+                            {
+                                "event": "capture_error",
+                                "reason": "source_open_failed",
+                                "source_path": str(source),
+                            }
+                        )
+                        self.stop_event.set()
+                        break
+                    source_fps = float(capture.get(cv2.CAP_PROP_FPS))
+                elif isinstance(source, str):
+                    import imageio.v3 as iio
+
+                    metadata = iio.immeta(source, plugin="FFMPEG")
+                    source_fps = float(metadata.get("fps", 0.0))
+                    iterator = iter(iio.imiter(source, plugin="FFMPEG"))
+                else:
                     self._record_event(
                         {
                             "event": "capture_error",
-                            "reason": "source_open_failed",
+                            "reason": "opencv_required_for_camera_source",
                             "source_path": str(source),
                         }
                     )
                     self.stop_event.set()
                     break
-                source_fps = float(capture.get(cv2.CAP_PROP_FPS))
                 if source_fps <= 0:
                     source_fps = target_fps
                 source_frame_index = 0
@@ -172,9 +189,17 @@ class RealtimeRunner:
                     if duration_s is not None and time.monotonic() - wall_start >= duration_s:
                         completed = True
                         break
-                    ok, frame_bgr = capture.read()
-                    if not ok:
-                        break
+                    if capture is not None:
+                        ok, frame_bgr = capture.read()
+                        if not ok:
+                            break
+                        frame_rgb = cv2.cvtColor(frame_bgr, cv2.COLOR_BGR2RGB)
+                    else:
+                        assert iterator is not None
+                        try:
+                            frame_rgb = np.asarray(next(iterator))
+                        except StopIteration:
+                            break
                     source_timestamp = source_frame_index / source_fps
                     source_frame_index += 1
                     if source_timestamp + 0.5 / source_fps < next_emit_source_s:
@@ -187,7 +212,7 @@ class RealtimeRunner:
                     captured = time.monotonic()
                     boundary = emitted_in_source == 0 and frame_index > 0
                     frame = CapturedFrame(
-                        frame_rgb=cv2.cvtColor(frame_bgr, cv2.COLOR_BGR2RGB),
+                        frame_rgb=frame_rgb,
                         timestamp=frame_index / target_fps,
                         frame_index=frame_index,
                         capture_monotonic=captured,
@@ -213,7 +238,8 @@ class RealtimeRunner:
                         break
                     frame_index += 1
                     emitted_in_source += 1
-                capture.release()
+                if capture is not None:
+                    capture.release()
                 self._record_event(
                     {
                         "event": "playlist_source_end",
