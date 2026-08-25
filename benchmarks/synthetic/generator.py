@@ -150,7 +150,13 @@ def generate_sequence(
         "translation",
         "translation_local",
         "rotation",
+        "rotation_local",
+        "translation_rotation",
         "translation_rotation_local",
+        "occlusion",
+        "motion_blur",
+        "illumination_change",
+        "low_texture",
         "degraded",
     }
     if case not in valid_cases:
@@ -168,6 +174,12 @@ def generate_sequence(
     if "local" in case or case == "degraded":
         local_mask[-local_count:] = True
     base = _texture(height, width, rng) if render_frames else None
+    if base is not None and case == "low_texture":
+        from scipy import ndimage
+
+        mean = np.mean(base, axis=(0, 1), keepdims=True)
+        base = np.clip(mean + 0.08 * (base - mean), 0, 255)
+        base = ndimage.gaussian_filter(base, sigma=(3.0, 3.0, 0.0)).astype(np.uint8)
     center = np.asarray([(width - 1) / 2, (height - 1) / 2], dtype=np.float64)
     frames = (
         np.empty((frames_count, height, width, 3), dtype=np.uint8)
@@ -178,8 +190,24 @@ def generate_sequence(
     visibility = np.ones((frames_count, points_count), dtype=bool)
     matrices = np.empty((frames_count, 2, 3), dtype=np.float64)
     residual = np.zeros_like(tracks)
-    includes_translation = case not in {"rotation"}
-    includes_rotation = case in {"rotation", "translation_rotation_local", "degraded"}
+    includes_translation = case in {
+        "translation",
+        "translation_local",
+        "translation_rotation",
+        "translation_rotation_local",
+        "occlusion",
+        "motion_blur",
+        "illumination_change",
+        "low_texture",
+        "degraded",
+    }
+    includes_rotation = case in {
+        "rotation",
+        "rotation_local",
+        "translation_rotation",
+        "translation_rotation_local",
+        "degraded",
+    }
     for index, time_s in enumerate(timestamps):
         phase = 2 * np.pi * translation_frequency_hz * time_s
         dx = translation_amplitude_px * np.sin(phase) if includes_translation else 0.0
@@ -209,7 +237,7 @@ def generate_sequence(
             residual[index, local_mask] = local_delta
             transformed[local_mask] += local_delta
         tracks[index] = transformed
-        if case == "degraded" and frames_count // 3 <= index < frames_count // 2:
+        if case in {"occlusion", "degraded"} and frames_count // 3 <= index < frames_count // 2:
             x0 = width * 2 // 3
             visibility[index, reference[:, 0] >= x0] = False
         if render_frames:
@@ -219,18 +247,17 @@ def generate_sequence(
                 px, py = np.round(tracks[index, point_index]).astype(int)
                 if 0 <= px < width and 0 <= py < height:
                     _draw_cross(rendered, px, py, (245, 35, 35))
-            if case == "degraded":
+            if case in {"illumination_change", "degraded"}:
                 illumination = 1.0 + 0.35 * np.sin(2 * np.pi * 0.7 * time_s)
                 rendered = np.clip(rendered.astype(np.float32) * illumination, 0, 255).astype(np.uint8)
+            if case in {"motion_blur", "degraded"}:
                 if index % max(2, int(round(fps / 4))) == 0:
-                    if _cv2 is not None:
-                        rendered = _cv2.GaussianBlur(rendered, (7, 7), 2.0)
-                    else:
-                        from scipy import ndimage
+                    from scipy import ndimage
 
-                        rendered = ndimage.gaussian_filter(
-                            rendered, sigma=(2.0, 2.0, 0.0)
-                        ).astype(np.uint8)
+                    rendered = ndimage.uniform_filter1d(
+                        rendered, size=7, axis=1, mode="reflect"
+                    ).astype(np.uint8)
+            if case in {"occlusion", "degraded"}:
                 if frames_count // 3 <= index < frames_count // 2:
                     rendered[:, x0:width] = 0
             frames[index] = rendered

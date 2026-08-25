@@ -46,6 +46,22 @@ class SyntheticGeneratorTests(unittest.TestCase):
         self.assertFalse(sequence.visibility.all())
         self.assertTrue(np.any(np.linalg.norm(sequence.local_residual_px, axis=-1) > 0))
 
+    def test_all_stress_scene_types_render(self) -> None:
+        for case in (
+            "translation_rotation",
+            "translation_local",
+            "rotation_local",
+            "translation_rotation_local",
+            "occlusion",
+            "motion_blur",
+            "illumination_change",
+            "low_texture",
+        ):
+            sequence = generate_sequence(
+                case, fps=10, duration_s=0.4, image_size=(48, 64), point_grid=(2, 3)
+            )
+            self.assertEqual(sequence.frames_rgb.shape[0], 4, case)
+
 
 if __name__ == "__main__":
     unittest.main()

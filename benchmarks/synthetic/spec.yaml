@@ -1,14 +1,14 @@
-schema_version: 1
+schema_version: 2
 seed: 7
 duration_s: 4.0
 image_size: [240, 320]
-point_grid: [8, 10]
+point_grid: [4, 8]
 translation:
-  amplitudes_px: [0.1, 0.25, 0.5, 1.0, 2.0, 5.0]
-  frequencies_hz: [0.5, 1.0, 2.0, 4.0, 6.0, 8.0]
-  fps_values: [25.0, 30.0, 60.0]
+  amplitudes_px: [0.05, 0.1, 0.25, 0.5, 1.0, 2.0, 5.0]
+  frequencies_hz: [0.5, 1.0, 3.0, 5.0, 8.0]
+  fps_values: [25.0, 30.0, 50.0, 60.0]
 rotation:
-  amplitudes_deg: [0.05, 0.1, 0.25, 0.5, 1.0]
+  amplitudes_deg: [0.02, 0.05, 0.1, 0.5, 1.0]
 local_motion:
   point_fraction: 0.2
   amplitude_px: 1.0
@@ -20,8 +20,13 @@ degradation:
   illumination_amplitude: 0.35
 cases:
   - translation
-  - translation_local
   - rotation
+  - translation_rotation
+  - translation_local
+  - rotation_local
   - translation_rotation_local
-  - degraded
-
+  - occlusion
+  - motion_blur
+  - illumination_change
+  - low_texture
+matrix_policy: complete_single_axis_plus_targeted_interactions
