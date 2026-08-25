@@ -1,0 +1,1 @@
+timestamp,frame_index,tx_px,ty_px,rotation_2d_rad,scale,inlier_ratio,fit_rmse_px,motion_quality,quality_reasons

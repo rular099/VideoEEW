@@ -1,0 +1,45 @@
+{
+  "captured_frames": 32,
+  "causality_note": "Signal filtering, derivatives, features, and running PGA use no future samples. CoTracker finalized blocks use future video frames relative to their source-frame timestamps; results are available online but do not satisfy strict source-timestamp causality.",
+  "dropped_blocks": 0,
+  "dropped_frames": 1,
+  "end_to_end_source_timestamp_causality": "FAIL",
+  "events": 4,
+  "frames_written": 0,
+  "observed_duration_s": 0.0,
+  "pga_est": null,
+  "pga_rejection_reason": "deployment_output_rejected_without_geometric_scale",
+  "pga_research_output": "see running_pga.csv",
+  "queue_slopes_per_block": {
+    "block_queue_depth": NaN,
+    "frame_queue_depth": NaN,
+    "writer_queue_depth": NaN
+  },
+  "queues": {
+    "capture": {
+      "capacity": 16,
+      "depth": 16,
+      "max_observed_depth": 16,
+      "name": "capture",
+      "rejected_items": 1
+    },
+    "output": {
+      "capacity": 2,
+      "depth": 1,
+      "max_observed_depth": 1,
+      "name": "output",
+      "rejected_items": 0
+    }
+  },
+  "realtime_acceptance": "NOT_TESTED",
+  "realtime_acceptance_scope": "requires_at_least_590s_observed",
+  "signal_pga_causality": "PASS",
+  "stopped_for_overload": true,
+  "target_fps": 30.0,
+  "timing": {},
+  "tracker_source_timestamp_causality": "FAIL_FUTURE_CONTEXT",
+  "tracker_source_timestamp_future_context_frames": [
+    8,
+    15
+  ]
+}

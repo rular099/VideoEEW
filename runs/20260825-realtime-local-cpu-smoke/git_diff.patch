@@ -1,0 +1,234 @@
+diff --git a/README.md b/README.md
+index 057c9bb..8443d8c 100644
+--- a/README.md
++++ b/README.md
+@@ -14,8 +14,17 @@ The implementation deliberately separates four claims:
+ 
+ No geometric scale is currently available for the supplied videos. Therefore
+ all motion remains in pixels and the runtime rejects physical PGA output with
+-`scale_invalid_and_model_not_trained`. Offline PGA cross-validation is marked
+-research-only. No RK3588 performance claim is made without an accessible board.
++`deployment_output_rejected_without_geometric_scale`. Offline PGA
++cross-validation is marked research-only. No RK3588 performance claim is made
++without an accessible board.
++
++The causal online signal path uses only current and past signal samples.
++However, the public CoTracker3 online window finalizes eight source-frame
++samples after a 16-frame window is present. Those samples therefore have 8--15
++frames of future video context relative to their source timestamps. VideoEEW
++records this explicitly as `FAIL_FUTURE_CONTEXT`: the current pipeline is
++online at block availability, but it is not claimed to satisfy strict
++source-timestamp end-to-end causality.
+ 
+ ## Current verified baseline
+ 
+@@ -100,13 +109,14 @@ python scripts/build_pga_dataset_manifest.py \
+   --redact-paths
+ ```
+ 
+-Extract one feature row per selected record:
++Extract one causal feature row per paired record (the command is resumable and
++retains a separate failure table):
+ 
+ ```bash
+ python scripts/run_pga_feature_batch.py \
+   --data-root '/path/to/视频数据/数据' \
+-  --record-ids 6 16 26 48 61 65 69 71 84 85 \
+-  --config configs/real_video_eval.yaml \
++  --all-paired \
++  --config configs/causal_realtime.yaml \
+   --cotracker-root /path/to/co-tracker \
+   --checkpoint /path/to/scaled_online.pth \
+   --device cuda \
+@@ -123,25 +133,26 @@ python scripts/recompute_alignments.py \
+   --data-root '/path/to/视频数据/数据' \
+   --run-root runs/pga-real
+ 
+-python -m seismic_motion.cli.evaluate_pga \
++python -m seismic_motion.cli.evaluate_pga_v2 \
+   --dataset runs/pga-real/pga_features.csv \
+-  --config configs/pga_train.yaml \
+-  --output-dir runs/pga-evaluation
++  --config configs/pga_eval_v2.yaml \
++  --output runs/pga-evaluation
+ ```
+ 
+-Evaluation uses record/event groups, not frame-random splits. It reports simple
+-single-coefficient, Ridge and Huber baselines; absolute and multiplicative
+-errors; factor-of-1.5/factor-of-2 rates; Pearson/Spearman correlation; PGA-bin
+-confusion matrices; and available group breakdowns. Because camera/site IDs and
+-scale are missing, cross-camera/site generalization and deployment PGA remain
+-unvalidated.
++Evaluation always emits ALL, VIDEO-QUALITY-ONLY and POST-HOC-ALIGNED tables.
++Only the post-hoc diagnostic may use strong-motion correlation for selection;
++ALL and VIDEO-QUALITY-ONLY are truth-blind. It reports median,
++single-coefficient, log-linear, Ridge and Huber baselines, including failed or
++unstable complex models. Because event/camera/site IDs and scale are missing,
++those group validations are `NOT_EVALUABLE`; record grouping is provisional and
++deployment PGA remains invalid.
+ 
+ ## Realtime runner
+ 
+ ```bash
+ python -m seismic_motion.cli.realtime \
+-  --config configs/rk3588_realtime.yaml \
+-  --camera /dev/video0 \
++  --config configs/causal_realtime.yaml \
++  --playlist configs/replay_playlist.example.yaml \
+   --cotracker-root /path/to/co-tracker \
+   --checkpoint /path/to/scaled_online.pth \
+   --device cuda \
+@@ -151,9 +162,13 @@ python -m seismic_motion.cli.realtime \
+ 
+ Capture and output queues have fixed capacity. On overload, processing stops
+ and writes an explicit event instead of silently dropping frames. The run emits
+-standard timing, memory and queue CSVs plus a rejection-gated summary. The
+-RK3588 configuration is ready, but board acceptance requires real 10- and
+-30-minute measurements including temperature and throttling.
++`runtime_timing.csv`, `runtime_queue.csv`, `runtime_memory.csv` and
++`runtime_events.csv` plus online signal/running-PGA tables. Playlist looping is
++wall-clock paced; every file or loop boundary explicitly resets tracker and
++signal state. A 30 FPS pass requires at least ten observed minutes, zero drops,
++no overload and end-to-end p95 below 500 ms. The RK3588 configuration is ready,
++but board acceptance requires real 10- and 30-minute measurements including
++temperature and throttling.
+ 
+ ## ONNX/RKNN work
+ 
+@@ -192,6 +207,12 @@ python scripts/build_audit_bundle.py \
+ PYTHONPATH=. python -m unittest discover -s tests -v
+ ```
+ 
++For a composite next-stage audit, first run `scripts/assemble_stage_audit.py`
++to combine PGA, runtime, alignment, stress and reseed run directories, then run
++the bundle builder on that assembled directory. Its `AUDIT_SUMMARY.md` answers
++the plan's A--L review questions directly; absent evidence remains
++`NOT_MEASURED`, `NOT_TESTED`, `NOT_EVALUABLE` or `BLOCKED`.
++
+ The compact audit bundle excludes raw videos, checkpoints and large binary
+ tracks but includes provenance, metrics, latency/memory/queue summaries, motion
+ quality, a PGA sample and plots. Missing evidence remains visibly missing; the
+diff --git a/scripts/build_audit_bundle.py b/scripts/build_audit_bundle.py
+index fadae57..94bd7b3 100644
+--- a/scripts/build_audit_bundle.py
++++ b/scripts/build_audit_bundle.py
+@@ -43,6 +43,7 @@ CORE_FILES = (
+     "pga_eval_posthoc_aligned.csv",
+     "pga_metrics.json",
+     "pga_bootstrap_ci.json",
++    "pga_model_research.json",
+     "alignment_candidates.csv",
+     "null_max_corr_distribution.csv",
+     "alignment_significance.csv",
+@@ -50,6 +51,8 @@ CORE_FILES = (
+     "common_motion_metrics.csv",
+     "local_motion_metrics.csv",
+     "rotation_metrics.csv",
++    "stress_manifest.json",
++    "stress_failures.csv",
+     "reseed_boundary.csv",
+     "reseed_summary.json",
+     "RK3588_STATUS.md",
+@@ -100,6 +103,14 @@ def _read_csv(path: Path) -> list[dict[str, str]]:
+         return list(csv.DictReader(handle))
+ 
+ 
++def _read_first_csv(run: Path, *names: str) -> list[dict[str, str]]:
++    for name in names:
++        path = run / name
++        if path.is_file():
++            return _read_csv(path)
++    return []
++
++
+ def _numeric(rows: list[dict[str, str]], column: str) -> np.ndarray:
+     values = []
+     for row in rows:
+@@ -187,9 +198,9 @@ def build_bundle(
+         for line in diff_text.splitlines()
+         if line.startswith("-") and not line.startswith("---")
+     )
+-    timing_rows = _read_csv(run / "timing.csv")
+-    memory_rows = _read_csv(run / "memory.csv")
+-    queue_rows = _read_csv(run / "queue.csv")
++    timing_rows = _read_first_csv(run, "runtime_timing.csv", "timing.csv")
++    memory_rows = _read_first_csv(run, "runtime_memory.csv", "memory.csv")
++    queue_rows = _read_first_csv(run, "runtime_queue.csv", "queue.csv")
+     motion_rows = _read_csv(run / "motion_quality.csv")
+     pga_rows = _read_csv(run / "pga_predictions.csv")
+     timing_summary = _summary_table(
+@@ -315,7 +326,14 @@ def build_bundle(
+     pc_50_status = (
+         runtime_status if target_fps is not None and abs(float(target_fps) - 50.0) < 0.1 else str(metrics.get("pc_50_fps_realtime", "NOT_TESTED"))
+     )
+-    causal_pga_status = str(metrics.get("causal_pga_status", "NOT_TESTED"))
++    pga_details = _read_json(run / "pga_metrics.json")
++    reseed_details = _read_json(run / "reseed_summary.json")
++    stress_details = _read_json(run / "stress_manifest.json")
++    causal_pga_status = str(
++        metrics.get(
++            "causal_pga_status", pga_details.get("causal_pga_status", "NOT_TESTED")
++        )
++    )
+     if causal_pga_status == "PASS_EVENT_END_ONLY":
+         causal_pga_status = "PASS"
+     scientific_validity = str(metrics.get("scientific_validity", "RESEARCH_ONLY"))
+@@ -327,6 +345,36 @@ def build_bundle(
+     end_to_end_causality = str(
+         metrics.get("end_to_end_source_timestamp_causality", "NOT_TESTED")
+     )
++    dropped_frames_for_review = metrics.get("dropped_frames", dropped_frames)
++    dropped_blocks_for_review = metrics.get("dropped_blocks", dropped_blocks)
++    if dropped_frames_for_review is None or dropped_blocks_for_review is None:
++        silent_drop_status = "NOT_TESTED"
++    elif int(dropped_frames_for_review) == 0 and int(dropped_blocks_for_review) == 0:
++        silent_drop_status = "PASS_NO_DROP_RECORDED"
++    else:
++        silent_drop_status = "FAIL_EXPLICIT_DROP_OR_REJECTION"
++    reseed_p95 = reseed_details.get("acceleration_spike_ratio_p95")
++    if reseed_p95 is None:
++        reseed_status = "NOT_EVALUABLE"
++    elif float(reseed_p95) <= 3.0:
++        reseed_status = "PASS_P95_RATIO_LE_3"
++    else:
++        reseed_status = "FAIL_REVIEW_REQUIRED"
++    subsets = pga_details.get("subsets", {})
++    all_metrics = subsets.get("all", {}) if isinstance(subsets, dict) else {}
++    quality_metrics = subsets.get("video_quality", {}) if isinstance(subsets, dict) else {}
++    all_primary = all_metrics.get("algorithms", {}).get(
++        pga_details.get("primary_algorithm", "single_coefficient"), {}
++    )
++    quality_primary = quality_metrics.get("algorithms", {}).get(
++        pga_details.get("primary_algorithm", "single_coefficient"), {}
++    )
++    truth_blind_selection = bool(
++        all_metrics
++        and quality_metrics
++        and not all_metrics.get("selection_uses_strong_motion", True)
++        and not quality_metrics.get("selection_uses_strong_motion", True)
++    )
+     summary_lines = [
+         f"# Audit summary: {run_id}",
+         "",
+@@ -344,6 +392,21 @@ def build_bundle(
+         "- Strict-causality interpretation: online availability alone is not treated as "
+         "source-timestamp causality; see the manifest tracker future-context range.",
+         "",
++        "## Required review questions (A-L)",
++        "",
++        f"- A. Strict realtime causality: `{end_to_end_causality}`; signal/PGA `{signal_causality}`, tracker `{tracker_causality}`.",
++        f"- B. PC 30 FPS without backlog: `{pc_30_status}`.",
++        f"- C. PC 50 FPS realtime: `{pc_50_status}`.",
++        f"- D. Silent frame drop: `{silent_drop_status}`; frames/blocks `{dropped_frames_for_review}` / `{dropped_blocks_for_review}`.",
++        f"- E. Reseed fake peak: `{reseed_status}`; acceleration-spike p95 ratio `{reseed_p95}`.",
++        f"- F. Strong-motion data used for ALL/VIDEO-QUALITY selection: `{'NO' if truth_blind_selection else 'NOT_VERIFIED'}`.",
++        f"- G. ALL primary PGA metrics: `{json.dumps(all_primary, sort_keys=True) if all_primary else 'NOT_EVALUABLE'}`.",
++        f"- H. VIDEO-QUALITY primary PGA metrics: `{json.dumps(quality_primary, sort_keys=True) if quality_primary else 'NOT_EVALUABLE'}`.",
++        "- I. Offline versus causal difference: see `offline_vs_causal_pga.png` and the causal signal benchmark; `NOT_EVALUABLE` if absent.",
++        f"- J. CoTracker common/local/rotation stress evidence: `{json.dumps(stress_details, sort_keys=True) if stress_details else 'NOT_MEASURED'}`.",
++        "- K. RK3588 measured: `NO_BLOCKED_NO_DEVICE`.",
++        f"- L. Evidence commit/config: `{manifest.get('git_commit', 'unknown')}` / `effective_config.yaml`.",
++        "",
+         "## Scope and provenance",
+         "",
+         f"- Git commit: `{manifest.get('git_commit', 'unknown')}`; dirty: `{manifest.get('git_dirty', 'unknown')}`.",

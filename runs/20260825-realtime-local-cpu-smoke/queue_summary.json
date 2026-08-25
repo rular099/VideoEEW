@@ -1,0 +1,16 @@
+{
+  "capture": {
+    "capacity": 16,
+    "depth": 16,
+    "max_observed_depth": 16,
+    "name": "capture",
+    "rejected_items": 1
+  },
+  "output": {
+    "capacity": 2,
+    "depth": 1,
+    "max_observed_depth": 1,
+    "name": "output",
+    "rejected_items": 0
+  }
+}

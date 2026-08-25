@@ -1,0 +1,1 @@
+timestamp,block_index,capture_timestamp,enqueue_timestamp,tracker_start,tracker_end,motion_end,signal_end,pga_end,write_end,capture_to_tracker_end,capture_to_pga,queue_wait,tracker_compute,postprocess_compute,capture_ms,preprocess_ms,encoder_ms,tracker_ms,motion_fit_ms,signal_ms,pga_ms,total_pipeline_ms,end_to_end_latency_ms

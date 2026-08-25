@@ -43,6 +43,7 @@ CORE_FILES = (
     "pga_eval_posthoc_aligned.csv",
     "pga_metrics.json",
     "pga_bootstrap_ci.json",
+    "pga_model_research.json",
     "alignment_candidates.csv",
     "null_max_corr_distribution.csv",
     "alignment_significance.csv",
@@ -50,6 +51,8 @@ CORE_FILES = (
     "common_motion_metrics.csv",
     "local_motion_metrics.csv",
     "rotation_metrics.csv",
+    "stress_manifest.json",
+    "stress_failures.csv",
     "reseed_boundary.csv",
     "reseed_summary.json",
     "RK3588_STATUS.md",
@@ -98,6 +101,14 @@ def _read_csv(path: Path) -> list[dict[str, str]]:
         return []
     with path.open("r", encoding="utf-8") as handle:
         return list(csv.DictReader(handle))
+
+
+def _read_first_csv(run: Path, *names: str) -> list[dict[str, str]]:
+    for name in names:
+        path = run / name
+        if path.is_file():
+            return _read_csv(path)
+    return []
 
 
 def _numeric(rows: list[dict[str, str]], column: str) -> np.ndarray:
@@ -187,9 +198,9 @@ def build_bundle(
         for line in diff_text.splitlines()
         if line.startswith("-") and not line.startswith("---")
     )
-    timing_rows = _read_csv(run / "timing.csv")
-    memory_rows = _read_csv(run / "memory.csv")
-    queue_rows = _read_csv(run / "queue.csv")
+    timing_rows = _read_first_csv(run, "runtime_timing.csv", "timing.csv")
+    memory_rows = _read_first_csv(run, "runtime_memory.csv", "memory.csv")
+    queue_rows = _read_first_csv(run, "runtime_queue.csv", "queue.csv")
     motion_rows = _read_csv(run / "motion_quality.csv")
     pga_rows = _read_csv(run / "pga_predictions.csv")
     timing_summary = _summary_table(
@@ -315,7 +326,14 @@ def build_bundle(
     pc_50_status = (
         runtime_status if target_fps is not None and abs(float(target_fps) - 50.0) < 0.1 else str(metrics.get("pc_50_fps_realtime", "NOT_TESTED"))
     )
-    causal_pga_status = str(metrics.get("causal_pga_status", "NOT_TESTED"))
+    pga_details = _read_json(run / "pga_metrics.json")
+    reseed_details = _read_json(run / "reseed_summary.json")
+    stress_details = _read_json(run / "stress_manifest.json")
+    causal_pga_status = str(
+        metrics.get(
+            "causal_pga_status", pga_details.get("causal_pga_status", "NOT_TESTED")
+        )
+    )
     if causal_pga_status == "PASS_EVENT_END_ONLY":
         causal_pga_status = "PASS"
     scientific_validity = str(metrics.get("scientific_validity", "RESEARCH_ONLY"))
@@ -326,6 +344,36 @@ def build_bundle(
     )
     end_to_end_causality = str(
         metrics.get("end_to_end_source_timestamp_causality", "NOT_TESTED")
+    )
+    dropped_frames_for_review = metrics.get("dropped_frames", dropped_frames)
+    dropped_blocks_for_review = metrics.get("dropped_blocks", dropped_blocks)
+    if dropped_frames_for_review is None or dropped_blocks_for_review is None:
+        silent_drop_status = "NOT_TESTED"
+    elif int(dropped_frames_for_review) == 0 and int(dropped_blocks_for_review) == 0:
+        silent_drop_status = "PASS_NO_DROP_RECORDED"
+    else:
+        silent_drop_status = "FAIL_EXPLICIT_DROP_OR_REJECTION"
+    reseed_p95 = reseed_details.get("acceleration_spike_ratio_p95")
+    if reseed_p95 is None:
+        reseed_status = "NOT_EVALUABLE"
+    elif float(reseed_p95) <= 3.0:
+        reseed_status = "PASS_P95_RATIO_LE_3"
+    else:
+        reseed_status = "FAIL_REVIEW_REQUIRED"
+    subsets = pga_details.get("subsets", {})
+    all_metrics = subsets.get("all", {}) if isinstance(subsets, dict) else {}
+    quality_metrics = subsets.get("video_quality", {}) if isinstance(subsets, dict) else {}
+    all_primary = all_metrics.get("algorithms", {}).get(
+        pga_details.get("primary_algorithm", "single_coefficient"), {}
+    )
+    quality_primary = quality_metrics.get("algorithms", {}).get(
+        pga_details.get("primary_algorithm", "single_coefficient"), {}
+    )
+    truth_blind_selection = bool(
+        all_metrics
+        and quality_metrics
+        and not all_metrics.get("selection_uses_strong_motion", True)
+        and not quality_metrics.get("selection_uses_strong_motion", True)
     )
     summary_lines = [
         f"# Audit summary: {run_id}",
@@ -343,6 +391,21 @@ def build_bundle(
         f"- Geometric scale: {geometric_scale}",
         "- Strict-causality interpretation: online availability alone is not treated as "
         "source-timestamp causality; see the manifest tracker future-context range.",
+        "",
+        "## Required review questions (A-L)",
+        "",
+        f"- A. Strict realtime causality: `{end_to_end_causality}`; signal/PGA `{signal_causality}`, tracker `{tracker_causality}`.",
+        f"- B. PC 30 FPS without backlog: `{pc_30_status}`.",
+        f"- C. PC 50 FPS realtime: `{pc_50_status}`.",
+        f"- D. Silent frame drop: `{silent_drop_status}`; frames/blocks `{dropped_frames_for_review}` / `{dropped_blocks_for_review}`.",
+        f"- E. Reseed fake peak: `{reseed_status}`; acceleration-spike p95 ratio `{reseed_p95}`.",
+        f"- F. Strong-motion data used for ALL/VIDEO-QUALITY selection: `{'NO' if truth_blind_selection else 'NOT_VERIFIED'}`.",
+        f"- G. ALL primary PGA metrics: `{json.dumps(all_primary, sort_keys=True) if all_primary else 'NOT_EVALUABLE'}`.",
+        f"- H. VIDEO-QUALITY primary PGA metrics: `{json.dumps(quality_primary, sort_keys=True) if quality_primary else 'NOT_EVALUABLE'}`.",
+        "- I. Offline versus causal difference: see `offline_vs_causal_pga.png` and the causal signal benchmark; `NOT_EVALUABLE` if absent.",
+        f"- J. CoTracker common/local/rotation stress evidence: `{json.dumps(stress_details, sort_keys=True) if stress_details else 'NOT_MEASURED'}`.",
+        "- K. RK3588 measured: `NO_BLOCKED_NO_DEVICE`.",
+        f"- L. Evidence commit/config: `{manifest.get('git_commit', 'unknown')}` / `effective_config.yaml`.",
         "",
         "## Scope and provenance",
         "",

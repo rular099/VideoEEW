@@ -14,8 +14,17 @@ The implementation deliberately separates four claims:
 
 No geometric scale is currently available for the supplied videos. Therefore
 all motion remains in pixels and the runtime rejects physical PGA output with
-`scale_invalid_and_model_not_trained`. Offline PGA cross-validation is marked
-research-only. No RK3588 performance claim is made without an accessible board.
+`deployment_output_rejected_without_geometric_scale`. Offline PGA
+cross-validation is marked research-only. No RK3588 performance claim is made
+without an accessible board.
+
+The causal online signal path uses only current and past signal samples.
+However, the public CoTracker3 online window finalizes eight source-frame
+samples after a 16-frame window is present. Those samples therefore have 8--15
+frames of future video context relative to their source timestamps. VideoEEW
+records this explicitly as `FAIL_FUTURE_CONTEXT`: the current pipeline is
+online at block availability, but it is not claimed to satisfy strict
+source-timestamp end-to-end causality.
 
 ## Current verified baseline
 
@@ -100,13 +109,14 @@ python scripts/build_pga_dataset_manifest.py \
   --redact-paths
 ```
 
-Extract one feature row per selected record:
+Extract one causal feature row per paired record (the command is resumable and
+retains a separate failure table):
 
 ```bash
 python scripts/run_pga_feature_batch.py \
   --data-root '/path/to/视频数据/数据' \
-  --record-ids 6 16 26 48 61 65 69 71 84 85 \
-  --config configs/real_video_eval.yaml \
+  --all-paired \
+  --config configs/causal_realtime.yaml \
   --cotracker-root /path/to/co-tracker \
   --checkpoint /path/to/scaled_online.pth \
   --device cuda \
@@ -123,25 +133,26 @@ python scripts/recompute_alignments.py \
   --data-root '/path/to/视频数据/数据' \
   --run-root runs/pga-real
 
-python -m seismic_motion.cli.evaluate_pga \
+python -m seismic_motion.cli.evaluate_pga_v2 \
   --dataset runs/pga-real/pga_features.csv \
-  --config configs/pga_train.yaml \
-  --output-dir runs/pga-evaluation
+  --config configs/pga_eval_v2.yaml \
+  --output runs/pga-evaluation
 ```
 
-Evaluation uses record/event groups, not frame-random splits. It reports simple
-single-coefficient, Ridge and Huber baselines; absolute and multiplicative
-errors; factor-of-1.5/factor-of-2 rates; Pearson/Spearman correlation; PGA-bin
-confusion matrices; and available group breakdowns. Because camera/site IDs and
-scale are missing, cross-camera/site generalization and deployment PGA remain
-unvalidated.
+Evaluation always emits ALL, VIDEO-QUALITY-ONLY and POST-HOC-ALIGNED tables.
+Only the post-hoc diagnostic may use strong-motion correlation for selection;
+ALL and VIDEO-QUALITY-ONLY are truth-blind. It reports median,
+single-coefficient, log-linear, Ridge and Huber baselines, including failed or
+unstable complex models. Because event/camera/site IDs and scale are missing,
+those group validations are `NOT_EVALUABLE`; record grouping is provisional and
+deployment PGA remains invalid.
 
 ## Realtime runner
 
 ```bash
 python -m seismic_motion.cli.realtime \
-  --config configs/rk3588_realtime.yaml \
-  --camera /dev/video0 \
+  --config configs/causal_realtime.yaml \
+  --playlist configs/replay_playlist.example.yaml \
   --cotracker-root /path/to/co-tracker \
   --checkpoint /path/to/scaled_online.pth \
   --device cuda \
@@ -151,9 +162,13 @@ python -m seismic_motion.cli.realtime \
 
 Capture and output queues have fixed capacity. On overload, processing stops
 and writes an explicit event instead of silently dropping frames. The run emits
-standard timing, memory and queue CSVs plus a rejection-gated summary. The
-RK3588 configuration is ready, but board acceptance requires real 10- and
-30-minute measurements including temperature and throttling.
+`runtime_timing.csv`, `runtime_queue.csv`, `runtime_memory.csv` and
+`runtime_events.csv` plus online signal/running-PGA tables. Playlist looping is
+wall-clock paced; every file or loop boundary explicitly resets tracker and
+signal state. A 30 FPS pass requires at least ten observed minutes, zero drops,
+no overload and end-to-end p95 below 500 ms. The RK3588 configuration is ready,
+but board acceptance requires real 10- and 30-minute measurements including
+temperature and throttling.
 
 ## ONNX/RKNN work
 
@@ -191,6 +206,12 @@ python scripts/build_audit_bundle.py \
 
 PYTHONPATH=. python -m unittest discover -s tests -v
 ```
+
+For a composite next-stage audit, first run `scripts/assemble_stage_audit.py`
+to combine PGA, runtime, alignment, stress and reseed run directories, then run
+the bundle builder on that assembled directory. Its `AUDIT_SUMMARY.md` answers
+the plan's A--L review questions directly; absent evidence remains
+`NOT_MEASURED`, `NOT_TESTED`, `NOT_EVALUABLE` or `BLOCKED`.
 
 The compact audit bundle excludes raw videos, checkpoints and large binary
 tracks but includes provenance, metrics, latency/memory/queue summaries, motion

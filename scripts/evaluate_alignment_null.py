@@ -13,7 +13,7 @@ import numpy as np
 
 from seismic_motion.pga.alignment import acceleration_to_displacement, full_containment_offset_range
 from seismic_motion.pga.alignment_null import alignment_null_test, benjamini_hochberg
-from seismic_motion.pga.records import discover_dataset_pairs, load_strong_motion_txt
+from seismic_motion.pga.records import discover_dataset_pairs, load_strong_motion_files
 
 
 def _write(path: Path, rows: list[dict[str, object]]) -> None:
@@ -49,7 +49,7 @@ def main() -> None:
     for record_index, record_id in enumerate(args.record_ids):
         pair = pairs[record_id]
         signals = np.load(Path(args.run_root) / f"record-{record_id}" / "filtered_signals.npz")
-        record = load_strong_motion_txt(pair.strong_motion_paths[0])
+        record = load_strong_motion_files(pair.strong_motion_paths)
         sensor_acceleration = np.stack([record.ew_gal, record.ns_gal], axis=1)
         visual_timestamps = signals["timestamps"]
         offset_range = full_containment_offset_range(visual_timestamps, record.timestamps_s)
