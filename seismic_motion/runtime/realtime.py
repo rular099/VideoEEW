@@ -159,7 +159,16 @@ class RealtimeRunner:
 
                     metadata = iio.immeta(source, plugin="FFMPEG")
                     source_fps = float(metadata.get("fps", 0.0))
-                    iterator = iter(iio.imiter(source, plugin="FFMPEG"))
+                    iterator_options: dict[str, object] = {"plugin": "FFMPEG"}
+                    if (
+                        self.config["video"].get("decode_resize_backend") == "ffmpeg"
+                        and self.config["video"].get("roi") is None
+                    ):
+                        height, width = (
+                            int(value) for value in self.config["tracker"]["model_resolution"]
+                        )
+                        iterator_options["size"] = (width, height)
+                    iterator = iter(iio.imiter(source, **iterator_options))
                 else:
                     self._record_event(
                         {

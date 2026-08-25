@@ -55,6 +55,8 @@ class OfflinePipelineResult:
 
 def _resize_rgb(frame: np.ndarray, output_size: tuple[int, int]) -> np.ndarray:
     height, width = output_size
+    if np.asarray(frame).shape[:2] == (height, width):
+        return np.asarray(frame)
     try:
         import cv2
 
@@ -136,13 +138,27 @@ def run_offline_video(
     last_processed_start: int | None = None
     recent_capture_ms: list[float] = []
     recent_preprocess_ms: list[float] = []
-    for frame_index, frame in enumerate(iio.imiter(video_path, plugin="FFMPEG")):
+    direct_decode_resize = bool(
+        video_config.get("decode_resize_backend") == "ffmpeg"
+        and video_config.get("roi") is None
+    )
+    iterator_options: dict[str, object] = {"plugin": "FFMPEG"}
+    if direct_decode_resize:
+        iterator_options["size"] = (model_size[1], model_size[0])
+        source_size = source_metadata.get("size") or source_metadata.get("source_size")
+        if isinstance(source_size, (tuple, list)) and len(source_size) == 2:
+            source_shape = (int(source_size[1]), int(source_size[0]), 3)
+    for frame_index, frame in enumerate(iio.imiter(video_path, **iterator_options)):
         capture_end = time.perf_counter()
         frame_array = np.asarray(frame)
         if source_shape is None:
             source_shape = frame_array.shape
         preprocess_start = time.perf_counter()
-        processed = _preprocess_frame(frame_array, video_config.get("roi"), model_size)
+        processed = (
+            frame_array
+            if direct_decode_resize
+            else _preprocess_frame(frame_array, video_config.get("roi"), model_size)
+        )
         preprocess_ms = (time.perf_counter() - preprocess_start) * 1000
         recent_capture_ms.append(0.0 if frame_index == 0 else 0.0)
         recent_preprocess_ms.append(preprocess_ms)
@@ -329,6 +345,9 @@ def run_offline_video(
             "timestamp_source": timestamp_source,
             "source_shape": source_shape,
             "processed_shape": model_size,
+            "decode_resize_backend": (
+                "ffmpeg_decode_time_resize" if direct_decode_resize else "post_decode_resize"
+            ),
             "frame_count": frame_count,
             "source_metadata": {
                 key: value

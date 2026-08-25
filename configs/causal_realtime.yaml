@@ -5,6 +5,7 @@ video:
   fps_hint: 30.0
   use_input_timestamps: true
   roi: null
+  decode_resize_backend: ffmpeg
 
 tracker:
   backend: cotracker3_online
