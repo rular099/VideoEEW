@@ -26,6 +26,64 @@ CORE_FILES = (
     "alignment_summary.csv",
     "runtime_summary.csv",
     "pga_metrics_by_group.csv",
+    "git_commit.txt",
+    "git_status_porcelain.txt",
+    "git_diff_cached.patch",
+    "effective_config.yaml",
+    "model_config.yaml",
+    "signal_config.yaml",
+    "runtime_config.yaml",
+    "deployment_config.yaml",
+    "runtime_timing.csv",
+    "runtime_queue.csv",
+    "runtime_memory.csv",
+    "runtime_events.csv",
+    "pga_eval_all.csv",
+    "pga_eval_video_quality.csv",
+    "pga_eval_posthoc_aligned.csv",
+    "pga_metrics.json",
+    "pga_bootstrap_ci.json",
+    "alignment_candidates.csv",
+    "null_max_corr_distribution.csv",
+    "alignment_significance.csv",
+    "tracking_stress_summary.csv",
+    "common_motion_metrics.csv",
+    "local_motion_metrics.csv",
+    "rotation_metrics.csv",
+    "reseed_boundary.csv",
+    "reseed_summary.json",
+    "RK3588_STATUS.md",
+    "IMPLEMENTATION_STATUS.md",
+)
+
+REQUIRED_V2_FILES = (
+    "git_commit.txt",
+    "git_status_porcelain.txt",
+    "git_diff.patch",
+    "git_diff_cached.patch",
+    "effective_config.yaml",
+    "model_config.yaml",
+    "signal_config.yaml",
+    "runtime_config.yaml",
+    "deployment_config.yaml",
+    "runtime_timing.csv",
+    "runtime_queue.csv",
+    "runtime_memory.csv",
+    "runtime_events.csv",
+    "pga_eval_all.csv",
+    "pga_eval_video_quality.csv",
+    "pga_eval_posthoc_aligned.csv",
+    "pga_metrics.json",
+    "pga_bootstrap_ci.json",
+    "alignment_candidates.csv",
+    "null_max_corr_distribution.csv",
+    "alignment_significance.csv",
+    "tracking_stress_summary.csv",
+    "common_motion_metrics.csv",
+    "local_motion_metrics.csv",
+    "rotation_metrics.csv",
+    "reseed_boundary.csv",
+    "RK3588_STATUS.md",
 )
 
 
@@ -100,6 +158,10 @@ def build_bundle(
         source = run / name
         if source.is_file():
             shutil.copy2(source, audit / name)
+    for name in REQUIRED_V2_FILES:
+        destination = audit / name
+        if not destination.exists():
+            destination.write_text("NOT_MEASURED\n", encoding="utf-8")
     manifest = _read_json(run / "manifest.json")
     metrics = _read_json(run / "metrics.json")
     if not metrics:
@@ -245,8 +307,30 @@ def build_bundle(
         if peak_kb is not None:
             peak_rss = float(peak_kb) / 1024.0
     baseline_metrics = _read_json(baseline_directory / "metrics.json") if baseline_directory else {}
+    target_fps = metrics.get("target_fps")
+    runtime_status = str(metrics.get("realtime_acceptance", "NOT_TESTED"))
+    pc_30_status = (
+        runtime_status if target_fps is not None and abs(float(target_fps) - 30.0) < 0.1 else str(metrics.get("pc_30_fps_realtime", "NOT_TESTED"))
+    )
+    pc_50_status = (
+        runtime_status if target_fps is not None and abs(float(target_fps) - 50.0) < 0.1 else str(metrics.get("pc_50_fps_realtime", "NOT_TESTED"))
+    )
+    causal_pga_status = str(metrics.get("causal_pga_status", "NOT_TESTED"))
+    if causal_pga_status == "PASS_EVENT_END_ONLY":
+        causal_pga_status = "PASS"
+    scientific_validity = str(metrics.get("scientific_validity", "RESEARCH_ONLY"))
+    geometric_scale = str(metrics.get("geometric_scale", metrics.get("scale_state", "UNCALIBRATED")))
     summary_lines = [
         f"# Audit summary: {run_id}",
+        "",
+        "## Deployment status",
+        "",
+        f"- PC 30 FPS realtime: {pc_30_status}",
+        f"- 50 FPS realtime: {pc_50_status}",
+        "- RK3588 realtime: BLOCKED",
+        f"- Causal PGA: {causal_pga_status}",
+        f"- PGA scientific validity: {scientific_validity}",
+        f"- Geometric scale: {geometric_scale}",
         "",
         "## Scope and provenance",
         "",

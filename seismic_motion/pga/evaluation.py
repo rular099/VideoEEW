@@ -298,6 +298,29 @@ def evaluate_subsets(
                     }
                 )
     causal_values = {str(row.get("causal", "UNKNOWN")) for row in input_rows}
+    quality_indices = np.flatnonzero(subset_masks["video_quality"])
+    if quality_indices.size >= 2:
+        primary = str(config["primary_algorithm"])
+        names, columns = _algorithm_layout(primary, feature_names)
+        final_model = EmpiricalPGAModel(
+            feature_names=names,
+            algorithm=primary,  # type: ignore[arg-type]
+            alpha=float(config["model"]["ridge_alpha"]),
+            log_target=primary in {"log_linear", "ridge", "huber"},
+            requires_scale=True,
+        ).fit(
+            features[quality_indices][:, columns],
+            target[quality_indices],
+            metadata={
+                "subset": "VIDEO_QUALITY_ONLY",
+                "selection_uses_strong_motion": False,
+                "metadata_relationships": "UNKNOWN",
+                "deployment_prediction_allowed": False,
+                "interpretation": "RESEARCH_ONLY_UNCALIBRATED",
+                "causal_input_values": sorted(causal_values),
+            },
+        )
+        final_model.save(output / "pga_model_research.json")
     group_status = {
         "record_group_cv": "PROVISIONAL_UNKNOWN_RECORD_RELATIONSHIPS",
         "event_group_cv": "NOT_EVALUABLE_METADATA_UNKNOWN",

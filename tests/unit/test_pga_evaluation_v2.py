@@ -63,6 +63,7 @@ class PGAEvaluationV2Tests(unittest.TestCase):
                 "pga_eval_posthoc_aligned.csv",
                 "pga_metrics.json",
                 "pga_bootstrap_ci.json",
+                "pga_model_research.json",
             ):
                 self.assertTrue((output / name).is_file(), name)
             with (output / "pga_eval_posthoc_aligned.csv").open() as handle:

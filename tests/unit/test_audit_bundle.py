@@ -43,6 +43,11 @@ class AuditBundleTests(unittest.TestCase):
             self.assertIn("abc", summary)
             self.assertIn("INVALID", summary)
             self.assertIn("110.0 MB", summary)
+            self.assertIn("PC 30 FPS realtime: NOT_TESTED", summary)
+            self.assertEqual(
+                (audit / "RK3588_STATUS.md").read_text(encoding="utf-8"),
+                "NOT_MEASURED\n",
+            )
 
 
 if __name__ == "__main__":
