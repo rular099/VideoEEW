@@ -7,6 +7,11 @@ from pathlib import Path
 
 import numpy as np
 
+try:  # OpenCV is optional in the shared GPU environment.
+    import cv2 as _cv2
+except ImportError:  # pragma: no cover - exercised on server 242
+    _cv2 = None
+
 
 @dataclass(frozen=True)
 class SyntheticSequence:
@@ -44,12 +49,13 @@ class SyntheticSequence:
 
 
 def _texture(height: int, width: int, rng: np.random.Generator) -> np.ndarray:
-    try:
-        import cv2
-    except ImportError as exc:  # pragma: no cover
-        raise RuntimeError("OpenCV is required to render synthetic frames") from exc
     noise = rng.normal(127, 45, size=(height, width)).clip(0, 255).astype(np.uint8)
-    noise = cv2.GaussianBlur(noise, (0, 0), 1.2)
+    if _cv2 is not None:
+        noise = _cv2.GaussianBlur(noise, (0, 0), 1.2)
+    else:
+        from scipy import ndimage
+
+        noise = ndimage.gaussian_filter(noise, 1.2).astype(np.uint8)
     rgb = np.stack(
         [noise, np.roll(noise, 7, axis=0), np.roll(noise, 11, axis=1)], axis=-1
     )
@@ -58,8 +64,60 @@ def _texture(height: int, width: int, rng: np.random.Generator) -> np.ndarray:
         y = int(rng.integers(5, max(6, height - 5)))
         radius = int(rng.integers(2, 8))
         color = tuple(int(v) for v in rng.integers(20, 235, size=3))
-        cv2.circle(rgb, (x, y), radius, color, -1, lineType=cv2.LINE_AA)
+        if _cv2 is not None:
+            _cv2.circle(rgb, (x, y), radius, color, -1, lineType=_cv2.LINE_AA)
+        else:
+            yy, xx = np.ogrid[:height, :width]
+            rgb[(xx - x) ** 2 + (yy - y) ** 2 <= radius**2] = color
     return rgb
+
+
+def _warp_affine(image: np.ndarray, matrix: np.ndarray, width: int, height: int) -> np.ndarray:
+    if _cv2 is not None:
+        return _cv2.warpAffine(
+            image,
+            matrix,
+            (width, height),
+            flags=_cv2.INTER_LINEAR,
+            borderMode=_cv2.BORDER_REFLECT101,
+        )
+    from scipy import ndimage
+
+    homogeneous = np.eye(3, dtype=np.float64)
+    homogeneous[:2] = matrix
+    inverse = np.linalg.inv(homogeneous)
+    swap = np.asarray([[0.0, 1.0], [1.0, 0.0]])
+    affine_yx = swap @ inverse[:2, :2] @ swap
+    offset_yx = swap @ inverse[:2, 2]
+    channels = [
+        ndimage.affine_transform(
+            image[:, :, channel],
+            affine_yx,
+            offset=offset_yx,
+            output_shape=(height, width),
+            order=1,
+            mode="reflect",
+            prefilter=False,
+        )
+        for channel in range(image.shape[2])
+    ]
+    return np.stack(channels, axis=-1).clip(0, 255).astype(np.uint8)
+
+
+def _draw_cross(image: np.ndarray, x: int, y: int, color: tuple[int, int, int]) -> None:
+    if _cv2 is not None:
+        _cv2.drawMarker(
+            image,
+            (x, y),
+            color,
+            _cv2.MARKER_CROSS,
+            5,
+            1,
+            _cv2.LINE_AA,
+        )
+        return
+    image[y, max(0, x - 2) : min(image.shape[1], x + 3)] = color
+    image[max(0, y - 2) : min(image.shape[0], y + 3), x] = color
 
 
 def _grid_points(height: int, width: int, rows: int, columns: int) -> np.ndarray:
@@ -99,11 +157,6 @@ def generate_sequence(
         raise ValueError(f"unknown synthetic case: {case}")
     if fps <= 0 or duration_s <= 0:
         raise ValueError("fps and duration_s must be positive")
-    if render_frames:
-        try:
-            import cv2
-        except ImportError as exc:  # pragma: no cover
-            raise RuntimeError("OpenCV is required to render synthetic frames") from exc
     rng = np.random.default_rng(seed)
     height, width = image_size
     frames_count = int(round(duration_s * fps))
@@ -161,30 +214,23 @@ def generate_sequence(
             visibility[index, reference[:, 0] >= x0] = False
         if render_frames:
             assert base is not None
-            rendered = cv2.warpAffine(
-                base,
-                matrix,
-                (width, height),
-                flags=cv2.INTER_LINEAR,
-                borderMode=cv2.BORDER_REFLECT101,
-            )
+            rendered = _warp_affine(base, matrix, width, height)
             for point_index in np.flatnonzero(local_mask):
                 px, py = np.round(tracks[index, point_index]).astype(int)
                 if 0 <= px < width and 0 <= py < height:
-                    cv2.drawMarker(
-                        rendered,
-                        (px, py),
-                        (245, 35, 35),
-                        cv2.MARKER_CROSS,
-                        5,
-                        1,
-                        cv2.LINE_AA,
-                    )
+                    _draw_cross(rendered, px, py, (245, 35, 35))
             if case == "degraded":
                 illumination = 1.0 + 0.35 * np.sin(2 * np.pi * 0.7 * time_s)
                 rendered = np.clip(rendered.astype(np.float32) * illumination, 0, 255).astype(np.uint8)
                 if index % max(2, int(round(fps / 4))) == 0:
-                    rendered = cv2.GaussianBlur(rendered, (7, 7), 2.0)
+                    if _cv2 is not None:
+                        rendered = _cv2.GaussianBlur(rendered, (7, 7), 2.0)
+                    else:
+                        from scipy import ndimage
+
+                        rendered = ndimage.gaussian_filter(
+                            rendered, sigma=(2.0, 2.0, 0.0)
+                        ).astype(np.uint8)
                 if frames_count // 3 <= index < frames_count // 2:
                     rendered[:, x0:width] = 0
             frames[index] = rendered

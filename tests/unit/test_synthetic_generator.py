@@ -1,16 +1,26 @@
-import sys
-from pathlib import Path
 import unittest
+from unittest import mock
 
 import numpy as np
 
 
-BENCHMARK = Path(__file__).resolve().parents[2] / "benchmarks" / "synthetic"
-sys.path.insert(0, str(BENCHMARK))
-from generator import generate_sequence  # noqa: E402
+from benchmarks.synthetic.generator import generate_sequence
 
 
 class SyntheticGeneratorTests(unittest.TestCase):
+    def test_scipy_renderer_fallback_without_opencv(self) -> None:
+        with mock.patch("benchmarks.synthetic.generator._cv2", None):
+            sequence = generate_sequence(
+                "translation",
+                fps=10,
+                duration_s=0.4,
+                image_size=(48, 64),
+                point_grid=(2, 3),
+                seed=4,
+            )
+        self.assertEqual(sequence.frames_rgb.shape, (4, 48, 64, 3))
+        self.assertEqual(sequence.frames_rgb.dtype, np.uint8)
+
     def test_subpixel_translation_ground_truth(self) -> None:
         sequence = generate_sequence(
             "translation",
