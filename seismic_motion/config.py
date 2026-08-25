@@ -41,6 +41,16 @@ def validate_config(config: Mapping[str, Any]) -> None:
         raise ConfigError("tracker.window_len must be at least 2")
     if int(tracker["step"]) <= 0 or int(tracker["step"]) > int(tracker["window_len"]):
         raise ConfigError("tracker.step must be in [1, window_len]")
+    if "source_timestamp_future_context_frames" in tracker:
+        minimum, maximum = (
+            int(value) for value in tracker["source_timestamp_future_context_frames"]
+        )
+        expected = (int(tracker["window_len"]) - int(tracker["step"]), int(tracker["window_len"]) - 1)
+        if (minimum, maximum) != expected:
+            raise ConfigError(
+                "tracker.source_timestamp_future_context_frames must explicitly "
+                f"match the finalized-block range {list(expected)}"
+            )
     if int(tracker["num_points"]) <= 0:
         raise ConfigError("tracker.num_points must be positive")
     if float(runtime["target_fps"]) <= 0:
@@ -60,4 +70,3 @@ def canonical_json(config: Mapping[str, Any]) -> str:
 
 def config_sha256(config: Mapping[str, Any]) -> str:
     return hashlib.sha256(canonical_json(config).encode("utf-8")).hexdigest()
-

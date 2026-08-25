@@ -19,7 +19,15 @@ class ConfigTests(unittest.TestCase):
         with self.assertRaises(ConfigError):
             validate_config(config)
 
+    def test_tracker_future_context_contract_matches_window(self) -> None:
+        config = load_config(ROOT / "configs" / "causal_realtime.yaml")
+        self.assertEqual(
+            config["tracker"]["source_timestamp_future_context_frames"], [8, 15]
+        )
+        config["tracker"]["source_timestamp_future_context_frames"] = [0, 0]
+        with self.assertRaises(ConfigError):
+            validate_config(config)
+
 
 if __name__ == "__main__":
     unittest.main()
-

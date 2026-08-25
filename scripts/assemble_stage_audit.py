@@ -137,6 +137,15 @@ def assemble(args: argparse.Namespace) -> Path:
         ),
         "rk3588_realtime": "BLOCKED",
         "causal_pga_status": pga_metrics.get("causal_pga_status", "NOT_TESTED"),
+        "signal_pga_causality": runtime_metrics.get(
+            "signal_pga_causality", pga_metrics.get("causal_pga_status", "NOT_TESTED")
+        ),
+        "tracker_source_timestamp_causality": runtime_metrics.get(
+            "tracker_source_timestamp_causality", "NOT_TESTED"
+        ),
+        "end_to_end_source_timestamp_causality": runtime_metrics.get(
+            "end_to_end_source_timestamp_causality", "NOT_TESTED"
+        ),
         "scientific_validity": pga_metrics.get("scientific_validity", "RESEARCH_ONLY"),
         "geometric_scale": pga_metrics.get("geometric_scale", "UNCALIBRATED"),
         "pga": pga_metrics,

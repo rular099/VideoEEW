@@ -320,6 +320,13 @@ def build_bundle(
         causal_pga_status = "PASS"
     scientific_validity = str(metrics.get("scientific_validity", "RESEARCH_ONLY"))
     geometric_scale = str(metrics.get("geometric_scale", metrics.get("scale_state", "UNCALIBRATED")))
+    signal_causality = str(metrics.get("signal_pga_causality", causal_pga_status))
+    tracker_causality = str(
+        metrics.get("tracker_source_timestamp_causality", "NOT_TESTED")
+    )
+    end_to_end_causality = str(
+        metrics.get("end_to_end_source_timestamp_causality", "NOT_TESTED")
+    )
     summary_lines = [
         f"# Audit summary: {run_id}",
         "",
@@ -329,8 +336,13 @@ def build_bundle(
         f"- 50 FPS realtime: {pc_50_status}",
         "- RK3588 realtime: BLOCKED",
         f"- Causal PGA: {causal_pga_status}",
+        f"- Signal/PGA zero-lookahead causality: {signal_causality}",
+        f"- Tracker source-timestamp causality: {tracker_causality}",
+        f"- End-to-end source-timestamp causality: {end_to_end_causality}",
         f"- PGA scientific validity: {scientific_validity}",
         f"- Geometric scale: {geometric_scale}",
+        "- Strict-causality interpretation: online availability alone is not treated as "
+        "source-timestamp causality; see the manifest tracker future-context range.",
         "",
         "## Scope and provenance",
         "",

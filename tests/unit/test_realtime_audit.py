@@ -96,6 +96,13 @@ class RealtimeAuditTests(unittest.TestCase):
             self.assertIn("PIXEL_PROXY_ONLY", running)
             self.assertEqual(len(runner.timing_records), 1)
             self.assertEqual(runner.frames_written, 8)
+            contract = runner._causality_contract()
+            self.assertEqual(contract["signal_pga_causality"], "PASS")
+            self.assertEqual(
+                contract["tracker_source_timestamp_causality"],
+                "FAIL_FUTURE_CONTEXT",
+            )
+            self.assertEqual(contract["end_to_end_source_timestamp_causality"], "FAIL")
 
 
 if __name__ == "__main__":

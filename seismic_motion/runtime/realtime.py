@@ -936,6 +936,7 @@ class RealtimeRunner:
             "device": self.device,
             "software_versions": environment["software_versions"],
             "tracker_parameters": self.config["tracker"],
+            "causality_contract": self._causality_contract(),
             "motion_parameters": self.config["motion"],
             "scale_parameters": self.config["scale"],
             "signal_parameters": self.config["signal"],
@@ -997,8 +998,37 @@ class RealtimeRunner:
             "pga_est": None,
             "pga_rejection_reason": "deployment_output_rejected_without_geometric_scale",
             "pga_research_output": "see running_pga.csv",
+            **self._causality_contract(),
         }
         (self.output / "metrics.json").write_text(
             json.dumps(summary, indent=2, sort_keys=True) + "\n", encoding="utf-8"
         )
         return summary
+
+    def _causality_contract(self) -> dict[str, object]:
+        """Make source-time and processing-time causality impossible to conflate."""
+
+        tracker = self.config["tracker"]
+        future_context = tracker.get("source_timestamp_future_context_frames")
+        signal = self.config["signal"]
+        signal_lookahead = int(
+            signal.get("online", {}).get("effective_lookahead_samples", -1)
+        )
+        signal_causal = bool(signal.get("causal", False)) and signal_lookahead == 0
+        tracker_source_causal = future_context in (None, [0, 0], (0, 0))
+        return {
+            "signal_pga_causality": "PASS" if signal_causal else "FAIL",
+            "tracker_source_timestamp_causality": (
+                "PASS" if tracker_source_causal else "FAIL_FUTURE_CONTEXT"
+            ),
+            "end_to_end_source_timestamp_causality": (
+                "PASS" if signal_causal and tracker_source_causal else "FAIL"
+            ),
+            "tracker_source_timestamp_future_context_frames": future_context,
+            "causality_note": (
+                "Signal filtering, derivatives, features, and running PGA use no future "
+                "samples. CoTracker finalized blocks use future video frames relative to "
+                "their source-frame timestamps; results are available online but do not "
+                "satisfy strict source-timestamp causality."
+            ),
+        }

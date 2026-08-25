@@ -15,6 +15,11 @@ tracker:
   point_mode: corners
   window_len: 16
   step: 8
+  # The public online model finalizes the first 8 samples only after a
+  # 16-frame window is available.  Signal/PGA processing is zero-lookahead,
+  # but source-timestamp end-to-end causality therefore does not pass.
+  source_timestamp_future_context_frames: [8, 15]
+  causality_semantics: delayed_block_with_future_source_frames
   iters: 6
   model_resolution: [384, 512]
   visibility_threshold: 0.6
