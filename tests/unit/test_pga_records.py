@@ -4,10 +4,27 @@ import unittest
 
 import numpy as np
 
-from seismic_motion.pga.records import discover_dataset_pairs, load_strong_motion_txt
+from seismic_motion.pga.records import (
+    discover_dataset_pairs,
+    load_strong_motion_files,
+    load_strong_motion_txt,
+)
 
 
 class StrongMotionRecordTests(unittest.TestCase):
+    def test_split_records_are_concatenated_with_monotone_time(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            first = root / "x-1.txt"
+            second = root / "x-2.txt"
+            content = "time\tew\tns\tud\n0\t1\t0\t0\n0.01\t2\t0\t0\n"
+            first.write_text(content, encoding="utf-8")
+            second.write_text(content, encoding="utf-8")
+            record = load_strong_motion_files([str(first), str(second)])
+            self.assertEqual(record.timestamps_s.size, 4)
+            self.assertTrue(np.all(np.diff(record.timestamps_s) > 0))
+            self.assertEqual(record.ew_gal.tolist(), [1, 2, 1, 2])
+
     def test_load_and_pga_definitions(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             path = Path(directory) / "sample.txt"

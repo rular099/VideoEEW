@@ -82,6 +82,9 @@ def extract_motion_features(
     flags = sorted(set(() if quality_flags is None else quality_flags))
     features: dict[str, float | str | int] = {
         "feature_version": FEATURE_VERSION,
+        "feature_availability": (
+            "EVENT_END_CAUSAL_AGGREGATE_NOT_RUNNING" if causal else "OFFLINE_FULL_RECORD"
+        ),
         "window_start": float(times[0]),
         "window_end": float(times[-1]),
         "sample_count": int(times.size),

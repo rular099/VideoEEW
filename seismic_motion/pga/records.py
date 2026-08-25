@@ -67,6 +67,36 @@ def load_strong_motion_txt(path: str | Path) -> StrongMotionRecord:
     )
 
 
+def load_strong_motion_files(paths: tuple[str, ...] | list[str]) -> StrongMotionRecord:
+    """Load one logical record, preserving explicitly split sensor segments."""
+
+    if not paths:
+        raise ValueError("at least one strong-motion path is required")
+    records = [load_strong_motion_txt(path) for path in paths]
+    timestamps: list[np.ndarray] = []
+    ew: list[np.ndarray] = []
+    ns: list[np.ndarray] = []
+    ud: list[np.ndarray] = []
+    last_timestamp: float | None = None
+    for record in records:
+        times = record.timestamps_s.copy()
+        if last_timestamp is not None and times[0] <= last_timestamp:
+            interval = float(np.median(np.diff(times)))
+            times += last_timestamp + interval - times[0]
+        timestamps.append(times)
+        ew.append(record.ew_gal)
+        ns.append(record.ns_gal)
+        ud.append(record.ud_gal)
+        last_timestamp = float(times[-1])
+    return StrongMotionRecord(
+        timestamps_s=np.concatenate(timestamps),
+        ew_gal=np.concatenate(ew),
+        ns_gal=np.concatenate(ns),
+        ud_gal=np.concatenate(ud),
+        source_path="|".join(record.source_path for record in records),
+    )
+
+
 def discover_dataset_pairs(data_root: str | Path) -> list[DatasetPair]:
     root = Path(data_root)
     video_root = root / "视频"
