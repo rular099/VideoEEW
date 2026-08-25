@@ -24,7 +24,9 @@ from seismic_motion.runtime.pipeline import run_offline_video, write_run_artifac
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--data-root", required=True)
-    parser.add_argument("--record-ids", nargs="+", required=True)
+    selection = parser.add_mutually_exclusive_group(required=True)
+    selection.add_argument("--record-ids", nargs="+")
+    selection.add_argument("--all-paired", action="store_true")
     parser.add_argument("--config", default="configs/real_video_eval.yaml")
     parser.add_argument("--cotracker-root", required=True)
     parser.add_argument("--checkpoint", required=True)
@@ -34,11 +36,20 @@ def main() -> None:
     args = parser.parse_args()
     config = load_config(args.config)
     pairs = {pair.record_id: pair for pair in discover_dataset_pairs(args.data_root)}
+    record_ids = (
+        [
+            record_id
+            for record_id, pair in pairs.items()
+            if pair.pairing_status in {"paired", "paired_split_sensor"}
+        ]
+        if args.all_paired
+        else list(args.record_ids or [])
+    )
     output_root = Path(args.output_root)
     output_root.mkdir(parents=True, exist_ok=True)
     feature_rows: list[dict[str, object]] = []
     failure_rows: list[dict[str, object]] = []
-    for record_id in args.record_ids:
+    for record_id in record_ids:
         try:
             if record_id not in pairs:
                 raise KeyError(f"record not found: {record_id}")
@@ -171,7 +182,7 @@ def main() -> None:
                 writer.writerows(failure_rows)
         print(
             f"processed record {record_id}: success={len(feature_rows)} failed={len(failure_rows)} "
-            f"total={len(args.record_ids)}",
+            f"total={len(record_ids)}",
             flush=True,
         )
 
