@@ -64,12 +64,20 @@ def extract_motion_features(
     if visible.shape != residual.shape[:2]:
         raise ValueError("visibility must have shape [T,N]")
     diagnostics = diagnose_timebase(times)
-    if derivative_method == "local_polynomial":
+    if derivative_method in {"local_polynomial", "causal_polynomial"}:
         velocity = local_polynomial_derivative(times, common, derivative_order=1, causal=causal)
         acceleration = local_polynomial_derivative(times, common, derivative_order=2, causal=causal)
-    elif derivative_method == "finite_difference":
-        velocity = finite_difference(times, common, derivative_order=1)
-        acceleration = finite_difference(times, common, derivative_order=2)
+    elif derivative_method in {"finite_difference", "backward_finite_difference"}:
+        if derivative_method == "backward_finite_difference" and not causal:
+            raise ValueError("backward_finite_difference is only valid with causal=True")
+        if derivative_method == "backward_finite_difference":
+            from .derivatives import backward_finite_difference
+
+            velocity = backward_finite_difference(times, common, derivative_order=1)
+            acceleration = backward_finite_difference(times, common, derivative_order=2)
+        else:
+            velocity = finite_difference(times, common, derivative_order=1)
+            acceleration = finite_difference(times, common, derivative_order=2)
     else:
         raise ValueError(f"unknown derivative method: {derivative_method}")
     common_magnitude = np.linalg.norm(common, axis=1)

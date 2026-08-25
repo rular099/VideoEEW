@@ -9,6 +9,21 @@ from seismic_motion.signal.timestamps import diagnose_timebase, resample_uniform
 
 
 class SignalTests(unittest.TestCase):
+    def test_causal_polynomial_config_name_is_accepted(self) -> None:
+        timestamps = np.arange(30, dtype=float) / 30
+        common = np.column_stack([timestamps**2, np.zeros_like(timestamps)])
+        residual = np.zeros((timestamps.size, 4, 2))
+        features = extract_motion_features(
+            timestamps,
+            common,
+            residual,
+            np.ones((timestamps.size, 4), dtype=bool),
+            derivative_method="causal_polynomial",
+            causal=True,
+        )
+        self.assertEqual(features["causal"], 1)
+        self.assertEqual(features["derivative_method"], "causal_polynomial")
+
     def test_irregular_local_polynomial_derivative(self) -> None:
         rng = np.random.default_rng(3)
         dt = 1 / 30 + rng.normal(0, 0.0004, 180)
