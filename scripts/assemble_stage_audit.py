@@ -63,6 +63,10 @@ def _copy_group(source: Path | None, names: tuple[str, ...], output: Path) -> No
 
 def assemble(args: argparse.Namespace) -> Path:
     repository = Path(__file__).resolve().parents[1]
+    # Snapshot provenance before creating an untracked run directory inside the
+    # repository; otherwise the audit would mark a clean commit dirty solely
+    # because of its own output.
+    state = git_state(repository)
     output = Path(args.output).resolve()
     output.mkdir(parents=True, exist_ok=True)
     sources = {
@@ -81,7 +85,6 @@ def assemble(args: argparse.Namespace) -> Path:
             if path.is_file() and path.suffix.lower() in {".png", ".json"}:
                 shutil.copy2(path, plots / path.name)
 
-    state = git_state(repository)
     commit = str(state.get("commit", "unknown"))
     status_lines = [str(value) for value in state.get("status", [])]
     (output / "git_commit.txt").write_text(commit + "\n", encoding="utf-8")
