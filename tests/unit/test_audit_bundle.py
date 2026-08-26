@@ -16,6 +16,9 @@ class AuditBundleTests(unittest.TestCase):
                 encoding="utf-8",
             )
             (run / "metrics.json").write_text('{"rmse":0.1}\n', encoding="utf-8")
+            (run / "reseed_summary.json").write_text(
+                "NOT_MEASURED\n", encoding="utf-8"
+            )
             (run / "timing.csv").write_text(
                 "timestamp,tracker_ms,total_pipeline_ms\n0,10,12\n1,20,23\n",
                 encoding="utf-8",

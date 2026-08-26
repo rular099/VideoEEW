@@ -93,7 +93,12 @@ REQUIRED_V2_FILES = (
 def _read_json(path: Path) -> dict[str, Any]:
     if not path.is_file():
         return {}
-    return json.loads(path.read_text(encoding="utf-8"))
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError:
+        # Composite audit placeholders intentionally contain NOT_MEASURED.
+        return {}
+    return payload if isinstance(payload, dict) else {}
 
 
 def _read_csv(path: Path) -> list[dict[str, str]]:
@@ -206,6 +211,11 @@ def build_bundle(
     timing_summary = _summary_table(
         timing_rows,
         (
+            "capture_to_tracker_end",
+            "capture_to_pga",
+            "queue_wait",
+            "tracker_compute",
+            "postprocess_compute",
             "capture_ms",
             "preprocess_ms",
             "encoder_ms",
@@ -307,6 +317,8 @@ def build_bundle(
                     event_rows.append(json.loads(line))
                 except json.JSONDecodeError:
                     event_rows.append({"event": "malformed_event_line"})
+    elif (run / "runtime_events.csv").is_file():
+        event_rows = _read_csv(run / "runtime_events.csv")
     event_counts: dict[str, int] = {}
     for event in event_rows:
         name = str(event.get("event", "UNKNOWN"))
