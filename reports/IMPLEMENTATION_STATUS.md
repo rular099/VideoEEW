@@ -458,3 +458,103 @@
 ### 下一阶段建议
 
 - 获取 RK3588 和 GitHub 凭据后，先 encoder RKNN，再 sampling fallback，最后 full-track regression 与持续实时验收。
+
+## Next-stage status (Phases K-W)
+
+本节覆盖 `1_cotracker3_rk3588_next_stage_codex_plan.md`，并取代上文中“GitHub
+不可用”等已经过时的状态。GitHub `main` 已配置且允许阶段性自动推送。
+
+### Phase K：因果信号链
+
+- `OnlineSignalProcessor.update()` 逐样本输出 common/local 位移、速度、加速度和质量状态；
+  causal SOS、导数历史和 running state 均为固定上限。
+- backward finite difference 与只使用 `[t-N+1,...,t]` 的 causal polynomial
+  derivative 均已实现，并有 future-invariance、非均匀时间戳和 bounded-state 测试。
+- `configs/causal_realtime.yaml` 禁用 full-record detrend，记录 window=9、poly=3、
+  filter order=4、startup policy 以及 signal lookahead=0。
+- 27-case offline/causal 对比已冻结在
+  `runs/20260823-causal-signal-benchmark/`。backward acceleration RMSE 为
+  38.18 px/s²、peak amplitude bias 约 102%；causal polynomial RMSE 为
+  77.08 px/s²、bias 约 229%。该失败结果说明因果导数尚不能直接支持物理 PGA 声明。
+- 重要边界：CoTracker 16-frame window 输出前 8 个 source-time samples 时使用了
+  8--15 帧未来视频上下文。因此 signal/PGA zero-lookahead 为 `PASS`，但当前
+  end-to-end source-timestamp strict causality 为 `FAIL`。在线可用不冒充 Q2 通过。
+
+### Phase L：Running PGA
+
+- `RunningPGAEstimator` 同时保存 instantaneous estimate 与单调 running max。
+- 无尺度时只输出明确标记的 pixel acceleration proxy；`pga_est` 物理部署字段为
+  null，拒绝理由为 `deployment_output_rejected_without_geometric_scale`。
+- Gal 映射接口仅允许显式 research mode；当前 `deployment_prediction_allowed=false`。
+
+### Phases M、O、P：PGA evaluation v2、扩大样本与复杂度控制
+
+- 固定输出 ALL、VIDEO-QUALITY-ONLY、POST-HOC-ALIGNED 三张逐记录表。
+- ALL 与 VIDEO-QUALITY 的 selection function 只读取视频/运行时字段；单元测试通过
+  改写真值和 alignment correlation 验证决策不变。POST-HOC 明确为不可部署诊断。
+- 同时报告 median、single coefficient、log-linear、Ridge 和 Huber；复杂模型爆炸、
+  外推和非有限风险不删除。primary 预声明为 single coefficient。
+- bootstrap 固定 2000 次。event/camera/site metadata 保持 `UNKNOWN`，相应 group CV
+  为 `NOT_EVALUABLE_METADATA_UNKNOWN`；record CV 为
+  `PROVISIONAL_UNKNOWN_RECORD_RELATIONSHIPS`。
+- 特征 schema 固定 `videoeew-motion-v1`，并另行强制检查 `causal=1`；evaluation 会拒绝
+  schema 混用。早期 10-record offline input 仅作反例，`causal_pga_status=FAIL`：ALL
+  single-coefficient MAE 112.64 gal、RMSE 133.73 gal；post-hoc 7 条 MAE 94.42 gal。
+- 2026-08-25 在 242 启动全部 81 个 paired/split-paired 记录的因果批处理。record 0
+  探针通过：470 blocks，tracker mean 180.96 ms、p95 191.65 ms；共享节点争用导致
+  max 7866 ms。跨夜最终计数需在 SSH 恢复后取回，当前不标记完成。
+
+### Phase N：alignment selection-bias audit
+
+- circular-shift 与 phase-randomized surrogate 均已实现；每个 surrogate 重新执行完整
+  axis/sign/lag/domain 最大搜索，而不是固定 observed candidate。
+- 输出 empirical p-value 与 Benjamini-Hochberg q-value；正式 CLI 拒绝少于 1000 次。
+- split sensor 使用全部分段拼接。真实数据正式 null run 尚未完成，状态 `NOT_MEASURED`。
+
+### Phase Q：CoTracker stress benchmark
+
+- coverage-designed matrix 覆盖 0.03--1.0 px、0.2--8 Hz、25/30/50/60 FPS、
+  0.02--0.5 degree rotation，以及 rotation/local/occlusion/blur/illumination/interactions。
+- 所有 case 调用真实 CoTracker adapter；oracle tracks 禁止作为模型误差。逐 case 保存
+  point/common/local/rotation/causal-acceleration、survival、quality 与 tracker timing。
+- 代码及矩阵 coverage tests 已通过；真实 GPU matrix 尚未执行，状态 `NOT_MEASURED`。
+
+### Phase R：reseed boundary
+
+- 已实现 point innovation、common translation/rotation jump、velocity jump、
+  acceleration spike ratio、quality before/after 和每个 reseed 的 ±1 s 五联图。
+- injected-jump unit test 通过。真实 81-record run 需待缓存完成后批量分析；未测前不判定
+  reseed 是否会制造假峰值。
+
+### Phases S、T：PC wall-clock realtime
+
+- 三 worker runner 按 wall clock 读取 camera/file/looping playlist；每个 source/loop
+  boundary 显式 reset tracker 与 signal state。
+- 每 block 保存 capture/enqueue/tracker/motion/signal/PGA/write 时间戳，以及有界 queue、
+  rejected item、RSS/peak RSS 与 overload event；标准 `runtime_*` 四张表已实现。
+- 本机 CPU 10 s 冒烟保存在 `runs/20260825-realtime-local-cpu-smoke/`：第 32 帧
+  capture queue 显式拒绝 1 帧并停止，首 tracker block 约 11.0 s。它验证 fail-closed，
+  同时明确证明本机 CPU 不满足 30 FPS；短于 590 s，验收状态为 `NOT_TESTED`。
+- 受 242 高负载和因果 batch 占用影响，受控 GPU 30 FPS 10/30 min 与 50 FPS run 尚未
+  完成，均保持 `NOT_TESTED`。
+
+### Phase U：尺度
+
+- 当前无几何尺度。pixel-domain motion/proxy 可报告；Gal research mapping 明确
+  `UNCALIBRATED/RESEARCH_ONLY`，deployment physical PGA 始终拒绝。
+
+### Phases V、W：RKNN 与 RK3588
+
+- 无可访问 RK3588；本阶段没有 converter log、板端数值误差、latency、memory、温度、
+  throttling 或 10/30 min 数据。
+- encoder ONNX 的既有 host 数值证据保留，但 RKNN conversion 与 RK3588 realtime 均为
+  `BLOCKED_NO_DEVICE`，不得写为预测通过。
+
+### Audit Bundle v2 与测试
+
+- composite assembler、固定图名生成器和 bundle builder 已实现。bundle 缺项写为
+  `NOT_MEASURED/NOT_TESTED/NOT_EVALUABLE/BLOCKED`，不会生成虚构数值。
+- `AUDIT_SUMMARY.md` 直接回答计划要求的 A--L；区分 signal causality、tracker
+  source-time causality 与 online availability。
+- 当前本地全量测试：53 passed / 0 failed（2026-08-26，
+  `python -m unittest discover -s tests -v`）。
