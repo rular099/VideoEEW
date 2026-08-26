@@ -18,7 +18,7 @@
 - A. Strict realtime causality: `FAIL`; signal/PGA `PASS`, tracker `FAIL_FUTURE_CONTEXT`.
 - B. PC 30 FPS without backlog: `NOT_TESTED`.
 - C. PC 50 FPS realtime: `NOT_TESTED`.
-- D. Silent frame drop: `FAIL_EXPLICIT_DROP_OR_REJECTION`; frames/blocks `1` / `0`.
+- D. Silent frame drop: `NO_SILENT_DROP_EXPLICIT_REJECTION_ACCEPTANCE_FAIL`; frames/blocks `1` / `0`.
 - E. Reseed fake peak: `NOT_EVALUABLE`; acceleration-spike p95 ratio `None`.
 - F. Strong-motion data used for ALL/VIDEO-QUALITY selection: `NO`.
 - G. ALL primary PGA metrics: `{"fraction_within_factor_1p5": 0.3, "fraction_within_factor_2": 0.6, "log_pga_mae": 0.9009784310940608, "mae": 112.63645160056869, "median_multiplicative_error": 1.8629259240028397, "pearson": 0.5057293857426376, "rmse": 133.73348559525422, "spearman": 0.6}`.
