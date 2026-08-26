@@ -12,6 +12,7 @@ class PGAEvaluationV2Tests(unittest.TestCase):
     def _row(self, index: int, correlation: float = 0.6) -> dict[str, str]:
         return {
             "record_id": str(index),
+            "feature_version": "videoeew-motion-v1",
             "pga_horizontal_vector_gal": str(50 + 10 * index),
             "common_peak_acceleration_px_s2": str(1 + index),
             "common_rms_acceleration_px_s2": str(0.5 + index),
@@ -70,6 +71,16 @@ class PGAEvaluationV2Tests(unittest.TestCase):
                 table = list(csv.DictReader(handle))
             self.assertEqual(table[0]["included"], "False")
             self.assertIn("RESEARCH_DIAGNOSTIC_ONLY", table[1]["interpretation"])
+
+    def test_feature_version_mismatch_is_rejected(self) -> None:
+        config = yaml.safe_load(
+            (Path(__file__).resolve().parents[2] / "configs/pga_eval_v2.yaml").read_text()
+        )
+        rows = [self._row(0), self._row(1)]
+        rows[0]["feature_version"] = "unexpected-version"
+        with tempfile.TemporaryDirectory() as directory:
+            with self.assertRaises(ValueError):
+                evaluate_subsets(rows, config, Path(directory))
 
 
 if __name__ == "__main__":

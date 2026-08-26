@@ -146,6 +146,15 @@ def evaluate_subsets(
 ) -> dict[str, Any]:
     output = Path(output_directory)
     output.mkdir(parents=True, exist_ok=True)
+    expected_feature_version = str(config["feature_version"])
+    feature_versions = {
+        str(row.get("feature_version", "MISSING")) for row in input_rows
+    }
+    if feature_versions != {expected_feature_version}:
+        raise ValueError(
+            "dataset feature versions do not match config: "
+            f"expected {expected_feature_version}, observed {sorted(feature_versions)}"
+        )
     feature_names = tuple(str(value) for value in config["features"])
     target_name = str(config["target"])
     target = np.asarray(
@@ -328,6 +337,8 @@ def evaluate_subsets(
         "site_group_cv": "NOT_EVALUABLE_METADATA_UNKNOWN",
     }
     payload = {
+        "feature_version": expected_feature_version,
+        "input_feature_versions": sorted(feature_versions),
         "target": target_name,
         "primary_algorithm": config["primary_algorithm"],
         "subsets": all_metrics,

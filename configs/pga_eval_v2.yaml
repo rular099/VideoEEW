@@ -1,5 +1,6 @@
 schema_version: 2
-feature_version: videoeew-motion-v2-causal
+# Feature schema remains v1; causal semantics are a separately mandatory field.
+feature_version: videoeew-motion-v1
 target: pga_horizontal_vector_gal
 primary_algorithm: single_coefficient
 features:
