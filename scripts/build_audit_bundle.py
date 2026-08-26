@@ -359,12 +359,22 @@ def build_bundle(
     )
     dropped_frames_for_review = metrics.get("dropped_frames", dropped_frames)
     dropped_blocks_for_review = metrics.get("dropped_blocks", dropped_blocks)
+    captured_for_review = metrics.get("captured_frames")
+    written_for_review = metrics.get("frames_written")
     if dropped_frames_for_review is None or dropped_blocks_for_review is None:
         silent_drop_status = "NOT_TESTED"
+    elif (
+        captured_for_review is not None
+        and written_for_review is not None
+        and int(captured_for_review) != int(written_for_review)
+        and int(dropped_frames_for_review) == 0
+        and int(dropped_blocks_for_review) == 0
+    ):
+        silent_drop_status = "FAIL_POSSIBLE_UNACCOUNTED_FRAME_LOSS"
     elif int(dropped_frames_for_review) == 0 and int(dropped_blocks_for_review) == 0:
         silent_drop_status = "PASS_NO_DROP_RECORDED"
     else:
-        silent_drop_status = "FAIL_EXPLICIT_DROP_OR_REJECTION"
+        silent_drop_status = "NO_SILENT_DROP_EXPLICIT_REJECTION_ACCEPTANCE_FAIL"
     reseed_p95 = reseed_details.get("acceleration_spike_ratio_p95")
     if reseed_p95 is None:
         reseed_status = "NOT_EVALUABLE"
