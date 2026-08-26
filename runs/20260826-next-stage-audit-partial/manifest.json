@@ -1,0 +1,69 @@
+{
+  "change_summary": "strict causal online signal, unbiased subsets, realtime audit, reseed and stress",
+  "device": "server-242-or-NOT_MEASURED",
+  "git_commit": "3697ca58afea8d90fa79bc3282c2ef20ef48e1d4",
+  "git_dirty": false,
+  "input_id": {
+    "alignment": "NOT_MEASURED",
+    "pga": "/home/zhangb/work/people/zhangbei/cotracker_rk3588/VideoEEW/runs/20260823-pga-evaluation-v2-offline-input",
+    "reseed": "NOT_MEASURED",
+    "runtime": "/home/zhangb/work/people/zhangbei/cotracker_rk3588/VideoEEW/runs/20260825-realtime-local-cpu-smoke",
+    "stress": "NOT_MEASURED"
+  },
+  "motion_parameters": {
+    "global_model": "similarity",
+    "max_fit_rmse_px": 2.0,
+    "min_inlier_ratio": 0.6,
+    "min_spatial_coverage": 0.08,
+    "min_valid_tracks": 10,
+    "quality_gate": true,
+    "ransac_threshold_px": 1.5,
+    "use_ransac": true
+  },
+  "pga_model_version": "videoeew-pga-v2-research",
+  "run_id": "20260826-next-stage-audit-partial",
+  "scale_parameters": {
+    "known_length_mm": null,
+    "known_length_px": null,
+    "method": "uncalibrated",
+    "valid_roi": null
+  },
+  "signal_parameters": {
+    "bandpass_hz": [
+      0.3,
+      8.0
+    ],
+    "causal": true,
+    "derivative_method": "causal_polynomial",
+    "detrend": false,
+    "online": {
+      "effective_lookahead_samples": 0,
+      "filter_order": 4,
+      "polynomial_order": 3,
+      "startup_behavior": "emit_nan_derivatives_until_ready",
+      "window_length": 9
+    },
+    "timestamp_aware": true
+  },
+  "tracker_parameters": {
+    "backend": "cotracker3_online",
+    "causality_semantics": "delayed_block_with_future_source_frames",
+    "checkpoint": null,
+    "cotracker_root": null,
+    "iters": 6,
+    "max_blocks_before_reseed": 64,
+    "model_resolution": [
+      384,
+      512
+    ],
+    "num_points": 32,
+    "point_mode": "corners",
+    "source_timestamp_future_context_frames": [
+      8,
+      15
+    ],
+    "step": 8,
+    "visibility_threshold": 0.6,
+    "window_len": 16
+  }
+}

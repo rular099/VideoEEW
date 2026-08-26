@@ -1,0 +1,21 @@
+{
+  "executable": "/home/zhangb/software/miniconda3/envs/general2/bin/python",
+  "machine": "x86_64",
+  "platform": "Linux-7.0.3-arch1-2-x86_64-with-glibc2.43",
+  "processor": "",
+  "python": "3.11.11 (main, Dec 11 2024, 16:28:39) [GCC 11.2.0]",
+  "software_versions": {
+    "PyYAML": "6.0.2",
+    "numpy": "1.26.4",
+    "onnx": "unavailable",
+    "onnxruntime": "unavailable",
+    "opencv-python": "4.12.0.88",
+    "opencv-python-headless": "unavailable",
+    "pandas": "2.3.0",
+    "psutil": "5.9.0",
+    "scikit-learn": "unavailable",
+    "scipy": "1.14.1",
+    "torch": "2.11.0",
+    "torchvision": "0.26.0"
+  }
+}

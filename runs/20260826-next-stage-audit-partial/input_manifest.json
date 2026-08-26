@@ -1,0 +1,7 @@
+{
+  "alignment": "NOT_MEASURED",
+  "pga": "/home/zhangb/work/people/zhangbei/cotracker_rk3588/VideoEEW/runs/20260823-pga-evaluation-v2-offline-input",
+  "reseed": "NOT_MEASURED",
+  "runtime": "/home/zhangb/work/people/zhangbei/cotracker_rk3588/VideoEEW/runs/20260825-realtime-local-cpu-smoke",
+  "stress": "NOT_MEASURED"
+}

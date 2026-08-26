@@ -1,0 +1,19 @@
+{
+  "alignment_observed_vs_null.png": "NOT_MEASURED_PLACEHOLDER",
+  "common_error_vs_amplitude.png": "NOT_MEASURED_PLACEHOLDER",
+  "local_error_vs_amplitude.png": "NOT_MEASURED_PLACEHOLDER",
+  "offline_vs_causal_pga.png": "NOT_EVALUABLE_PLACEHOLDER",
+  "pga_error_by_camera.png": "NOT_EVALUABLE_PLACEHOLDER",
+  "pga_error_by_event.png": "NOT_EVALUABLE_PLACEHOLDER",
+  "pga_error_by_record.png": "GENERATED",
+  "pga_error_by_site.png": "NOT_EVALUABLE_PLACEHOLDER",
+  "pga_true_vs_estimate_all.png": "GENERATED",
+  "pga_true_vs_estimate_posthoc.png": "GENERATED",
+  "pga_true_vs_estimate_video_quality.png": "GENERATED",
+  "reseed_jump_distribution.png": "NOT_MEASURED_PLACEHOLDER",
+  "rotation_error_vs_rotation.png": "NOT_MEASURED_PLACEHOLDER",
+  "runtime_latency_timeseries.png": "NOT_MEASURED_PLACEHOLDER",
+  "runtime_memory.png": "GENERATED",
+  "runtime_queue_depth.png": "GENERATED",
+  "tracking_rmse_vs_amplitude.png": "NOT_MEASURED_PLACEHOLDER"
+}

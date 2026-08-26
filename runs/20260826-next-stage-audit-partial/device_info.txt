@@ -1,0 +1,5 @@
+{
+  "development_host": "Linux-7.0.3-arch1-2-x86_64-with-glibc2.43",
+  "rk3588": "BLOCKED_NO_DEVICE",
+  "runtime_evidence": "/home/zhangb/work/people/zhangbei/cotracker_rk3588/VideoEEW/runs/20260825-realtime-local-cpu-smoke"
+}
