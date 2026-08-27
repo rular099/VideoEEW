@@ -1,0 +1,8 @@
+{
+  "acceleration_spike_ratio_p50": 1.2166072453659869,
+  "acceleration_spike_ratio_p95": 1.2166072453659869,
+  "mask_recommendation": "REVIEW_REQUIRED_IF_RATIO_P95_EXCEEDS_3",
+  "plot_status": "GENERATED",
+  "reseed_events_analyzed": 1,
+  "reseed_events_in_log": 1
+}

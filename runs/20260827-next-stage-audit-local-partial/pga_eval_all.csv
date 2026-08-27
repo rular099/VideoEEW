@@ -1,0 +1,2 @@
+record_id,event_id,camera_id,site_id,fps,duration,scale_state,quality_state,true_pga_gal,predicted_pga_gal,abs_error_gal,multiplicative_error,included,exclusion_reason,causal,interpretation,predicted_median_gal,predicted_single_coefficient_gal,predicted_log_linear_gal,predicted_ridge_gal,predicted_huber_gal
+48,UNKNOWN,UNKNOWN,UNKNOWN,48.95104799999967,17.89542891911119,UNCALIBRATED,PASS_WITH_UNKNOWN_METRICS,217.87330032842482,nan,,nan,True,,1,PRIMARY_TRUTH_BLIND_SELECTION,,,,,

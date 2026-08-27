@@ -1,0 +1,47 @@
+{
+  "causal_input_values": [
+    "1"
+  ],
+  "causal_pga_status": "PASS",
+  "deployment_prediction_allowed": false,
+  "feature_version": "videoeew-motion-v1",
+  "geometric_scale": "UNCALIBRATED",
+  "group_cv_status": {
+    "camera_group_cv": "NOT_EVALUABLE_METADATA_UNKNOWN",
+    "event_group_cv": "NOT_EVALUABLE_METADATA_UNKNOWN",
+    "record_group_cv": "PROVISIONAL_UNKNOWN_RECORD_RELATIONSHIPS",
+    "site_group_cv": "NOT_EVALUABLE_METADATA_UNKNOWN"
+  },
+  "input_feature_versions": [
+    "videoeew-motion-v1"
+  ],
+  "primary_algorithm": "single_coefficient",
+  "scientific_validity": "RESEARCH_ONLY",
+  "subsets": {
+    "all": {
+      "algorithms": {},
+      "included_rows": 1,
+      "input_rows": 1,
+      "interpretation": "PRIMARY_TRUTH_BLIND_SELECTION",
+      "not_evaluable_reason": "fewer_than_two_included_records",
+      "selection_uses_strong_motion": false
+    },
+    "posthoc_aligned": {
+      "algorithms": {},
+      "included_rows": 1,
+      "input_rows": 1,
+      "interpretation": "RESEARCH_DIAGNOSTIC_ONLY_NOT_DEPLOYABLE",
+      "not_evaluable_reason": "fewer_than_two_included_records",
+      "selection_uses_strong_motion": true
+    },
+    "video_quality": {
+      "algorithms": {},
+      "included_rows": 1,
+      "input_rows": 1,
+      "interpretation": "PRIMARY_TRUTH_BLIND_SELECTION",
+      "not_evaluable_reason": "fewer_than_two_included_records",
+      "selection_uses_strong_motion": false
+    }
+  },
+  "target": "pga_horizontal_vector_gal"
+}

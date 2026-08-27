@@ -1,0 +1,7 @@
+{
+  "alignment": "NOT_MEASURED",
+  "pga": "runs/20260827-pga-evaluation-local-record48",
+  "reseed": "runs/20260827-pga-causal-local-cpu/reseed-record-48",
+  "runtime": "runs/20260825-realtime-local-cpu-smoke",
+  "stress": "NOT_MEASURED"
+}

@@ -1,0 +1,112 @@
+{
+  "causal_pga_status": "PASS",
+  "end_to_end_source_timestamp_causality": "FAIL",
+  "geometric_scale": "UNCALIBRATED",
+  "pc_30_fps_realtime": "NOT_TESTED",
+  "pc_50_fps_realtime": "NOT_TESTED",
+  "pga": {
+    "causal_input_values": [
+      "1"
+    ],
+    "causal_pga_status": "PASS",
+    "deployment_prediction_allowed": false,
+    "feature_version": "videoeew-motion-v1",
+    "geometric_scale": "UNCALIBRATED",
+    "group_cv_status": {
+      "camera_group_cv": "NOT_EVALUABLE_METADATA_UNKNOWN",
+      "event_group_cv": "NOT_EVALUABLE_METADATA_UNKNOWN",
+      "record_group_cv": "PROVISIONAL_UNKNOWN_RECORD_RELATIONSHIPS",
+      "site_group_cv": "NOT_EVALUABLE_METADATA_UNKNOWN"
+    },
+    "input_feature_versions": [
+      "videoeew-motion-v1"
+    ],
+    "primary_algorithm": "single_coefficient",
+    "scientific_validity": "RESEARCH_ONLY",
+    "subsets": {
+      "all": {
+        "algorithms": {},
+        "included_rows": 1,
+        "input_rows": 1,
+        "interpretation": "PRIMARY_TRUTH_BLIND_SELECTION",
+        "not_evaluable_reason": "fewer_than_two_included_records",
+        "selection_uses_strong_motion": false
+      },
+      "posthoc_aligned": {
+        "algorithms": {},
+        "included_rows": 1,
+        "input_rows": 1,
+        "interpretation": "RESEARCH_DIAGNOSTIC_ONLY_NOT_DEPLOYABLE",
+        "not_evaluable_reason": "fewer_than_two_included_records",
+        "selection_uses_strong_motion": true
+      },
+      "video_quality": {
+        "algorithms": {},
+        "included_rows": 1,
+        "input_rows": 1,
+        "interpretation": "PRIMARY_TRUTH_BLIND_SELECTION",
+        "not_evaluable_reason": "fewer_than_two_included_records",
+        "selection_uses_strong_motion": false
+      }
+    },
+    "target": "pga_horizontal_vector_gal"
+  },
+  "reseed": {
+    "acceleration_spike_ratio_p50": 1.2166072453659869,
+    "acceleration_spike_ratio_p95": 1.2166072453659869,
+    "mask_recommendation": "REVIEW_REQUIRED_IF_RATIO_P95_EXCEEDS_3",
+    "plot_status": "GENERATED",
+    "reseed_events_analyzed": 1,
+    "reseed_events_in_log": 1
+  },
+  "rk3588_realtime": "BLOCKED",
+  "runtime": {
+    "captured_frames": 32,
+    "causality_note": "Signal filtering, derivatives, features, and running PGA use no future samples. CoTracker finalized blocks use future video frames relative to their source-frame timestamps; results are available online but do not satisfy strict source-timestamp causality.",
+    "dropped_blocks": 0,
+    "dropped_frames": 1,
+    "end_to_end_source_timestamp_causality": "FAIL",
+    "events": 4,
+    "frames_written": 0,
+    "observed_duration_s": 0.0,
+    "pga_est": null,
+    "pga_rejection_reason": "deployment_output_rejected_without_geometric_scale",
+    "pga_research_output": "see running_pga.csv",
+    "queue_slopes_per_block": {
+      "block_queue_depth": NaN,
+      "frame_queue_depth": NaN,
+      "writer_queue_depth": NaN
+    },
+    "queues": {
+      "capture": {
+        "capacity": 16,
+        "depth": 16,
+        "max_observed_depth": 16,
+        "name": "capture",
+        "rejected_items": 1
+      },
+      "output": {
+        "capacity": 2,
+        "depth": 1,
+        "max_observed_depth": 1,
+        "name": "output",
+        "rejected_items": 0
+      }
+    },
+    "realtime_acceptance": "NOT_TESTED",
+    "realtime_acceptance_scope": "requires_at_least_590s_observed",
+    "signal_pga_causality": "PASS",
+    "stopped_for_overload": true,
+    "target_fps": 30.0,
+    "timing": {},
+    "tracker_source_timestamp_causality": "FAIL_FUTURE_CONTEXT",
+    "tracker_source_timestamp_future_context_frames": [
+      8,
+      15
+    ]
+  },
+  "scientific_validity": "RESEARCH_ONLY",
+  "signal_pga_causality": "PASS",
+  "stress": {},
+  "tracker_source_timestamp_causality": "FAIL_FUTURE_CONTEXT"
+}

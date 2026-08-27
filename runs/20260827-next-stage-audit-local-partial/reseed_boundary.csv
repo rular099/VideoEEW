@@ -1,0 +1,2 @@
+reseed_id,frame_id,timestamp,point_position_jump_mean_px,point_position_jump_p95_px,common_translation_jump_px,common_rotation_jump_deg,velocity_jump,acceleration_spike,acceleration_spike_ratio,quality_before,quality_after
+1,512,10.45942877464033,2.042482022499458,2.198954733773477,2.088524053430439,0.004720829392525183,102.23544118862752,2810.4629693179118,1.2166072453659869,GOOD,GOOD

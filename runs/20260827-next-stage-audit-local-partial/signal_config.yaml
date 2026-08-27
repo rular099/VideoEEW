@@ -1,0 +1,13 @@
+timestamp_aware: true
+detrend: false
+bandpass_hz:
+- 0.3
+- 8.0
+derivative_method: causal_polynomial
+causal: true
+online:
+  filter_order: 4
+  window_length: 9
+  polynomial_order: 3
+  startup_behavior: emit_nan_derivatives_until_ready
+  effective_lookahead_samples: 0

@@ -1,0 +1,5 @@
+action,capture_queue_depth,capture_rejected_items,capture_timestamp,emitted_frames,end_to_end_latency_ms,enqueue_timestamp,event,frame_index,loop_index,monotonic_s,output_queue_depth,output_rejected_items,peak_rss_mb,playlist_index,rss_mb,source_boundary,source_fps,source_path,stage,system_available_mem_mb,target_fps,tracker_end,tracker_ms,tracker_start
+,,,,,,,playlist_source_start,,0,7511061.380083551,,,,0,,,50.0,/run/media/zhangb/My Passport/视频数据/rescaled/rescaled_2_small.avi,,,30.0,,,
+stop_without_silent_drop,,,,,,,overload,32,,7511061.481878542,,,,,,,,,capture_queue,,,,,
+,,,,32,,,playlist_source_end,,0,7511061.483344343,,,,0,,,,/run/media/zhangb/My Passport/视频数据/rescaled/rescaled_2_small.avi,,,,,,
+,16,1,7511061.469578066,,11013.130641542375,7511061.472651913,tracker_block,0,0,7511072.482708707,1,0,2425.68359375,0,1072.421875,True,,/run/media/zhangb/My Passport/视频数据/rescaled/rescaled_2_small.avi,,19695.50390625,,7511072.482708707,11004.263444803655,7511061.478445263

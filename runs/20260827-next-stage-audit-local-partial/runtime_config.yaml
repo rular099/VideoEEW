@@ -1,0 +1,6 @@
+target_fps: 30.0
+max_end_to_end_latency_ms: 500.0
+max_queue_blocks: 2
+overload_policy: reject_and_stop
+replay_mode: wall_clock_playlist
+playlist_loop: true
