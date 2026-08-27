@@ -502,7 +502,9 @@
   single-coefficient MAE 112.64 gal、RMSE 133.73 gal；post-hoc 7 条 MAE 94.42 gal。
 - 2026-08-25 在 242 启动全部 81 个 paired/split-paired 记录的因果批处理。record 0
   探针通过：470 blocks，tracker mean 180.96 ms、p95 191.65 ms；共享节点争用导致
-  max 7866 ms。跨夜最终计数需在 SSH 恢复后取回，当前不标记完成。
+  max 7866 ms。最后可读进度至少 3 条 causal feature rows、0 个已记录失败；不得据此
+  推断全批次完成。2026-08-26--27 多次检查均为 TCP/22 可连接但 sshd 不发送 banner，
+  因而跨夜最终计数需在 SSH 恢复后取回，当前不标记完成，也不启动重复 batch。
 
 ### Phase N：alignment selection-bias audit
 
@@ -556,5 +558,5 @@
   `NOT_MEASURED/NOT_TESTED/NOT_EVALUABLE/BLOCKED`，不会生成虚构数值。
 - `AUDIT_SUMMARY.md` 直接回答计划要求的 A--L；区分 signal causality、tracker
   source-time causality 与 online availability。
-- 当前本地全量测试：53 passed / 0 failed（2026-08-26，
+- 当前本地全量测试：55 passed / 0 failed（2026-08-27，
   `python -m unittest discover -s tests -v`）。
