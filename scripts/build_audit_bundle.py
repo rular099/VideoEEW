@@ -207,7 +207,14 @@ def build_bundle(
     memory_rows = _read_first_csv(run, "runtime_memory.csv", "memory.csv")
     queue_rows = _read_first_csv(run, "runtime_queue.csv", "queue.csv")
     motion_rows = _read_csv(run / "motion_quality.csv")
-    pga_rows = _read_csv(run / "pga_predictions.csv")
+    pga_rows = _read_first_csv(run, "pga_predictions.csv", "pga_eval_all.csv")
+    if pga_rows and "included" in pga_rows[0]:
+        pga_included_count = sum(
+            str(row.get("included", "")).strip().lower() in {"1", "true", "yes"}
+            for row in pga_rows
+        )
+    else:
+        pga_included_count = len(pga_rows)
     timing_summary = _summary_table(
         timing_rows,
         (
@@ -461,7 +468,7 @@ def build_bundle(
         "",
         f"- Metrics: `{json.dumps(metrics, sort_keys=True)}`.",
         f"- Motion quality counts: `{json.dumps(quality_counts, sort_keys=True)}`.",
-        f"- PGA rows included: `{len(pga_rows)}`.",
+        f"- PGA rows included: `{pga_included_count}`.",
         f"- Scale state: `{metrics.get('scale_state', manifest.get('scale_parameters', {}).get('method', 'unknown'))}`.",
         "",
         "## Runtime behavior",

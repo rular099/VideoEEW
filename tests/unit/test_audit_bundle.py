@@ -37,6 +37,11 @@ class AuditBundleTests(unittest.TestCase):
                 "0,0,100,110,2000\n",
                 encoding="utf-8",
             )
+            (run / "pga_eval_all.csv").write_text(
+                "record_id,included,true_pga_gal,predicted_pga_gal\n"
+                "1,True,10,9\n2,False,20,nan\n",
+                encoding="utf-8",
+            )
             (run / "plots").mkdir()
             (run / "plots" / "plot_manifest.json").write_text(
                 '{"runtime_memory.png":"GENERATED"}\n', encoding="utf-8"
@@ -51,6 +56,7 @@ class AuditBundleTests(unittest.TestCase):
             self.assertIn("abc", summary)
             self.assertIn("INVALID", summary)
             self.assertIn("110.0 MB", summary)
+            self.assertIn("PGA rows included: `1`", summary)
             self.assertIn("PC 30 FPS realtime: NOT_TESTED", summary)
             self.assertIn("PASS_NO_DROP_RECORDED", summary)
             self.assertEqual(
