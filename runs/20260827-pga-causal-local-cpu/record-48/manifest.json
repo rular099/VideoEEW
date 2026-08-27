@@ -1,0 +1,81 @@
+{
+  "checkpoint_sha256": "205d34789f19699d64b22cf93f9b697f15f28d4025240e31532e504109837218",
+  "config_sha256": "d5d87c5ecf49db3fa46319230010959dff46d183eab1ecc52baeaae0e8645b15",
+  "cotracker_commit": "82e02e8029753ad4ef13cf06be7f4fc5facdda4d",
+  "cotracker_dirty": true,
+  "device": "cpu",
+  "git_commit": "1c1b35f327a4f0f6ee8023d116f421043208baa9",
+  "git_dirty": false,
+  "input_id": "${DATA_ROOT}/视频/48.avi",
+  "motion_parameters": {
+    "global_model": "similarity",
+    "max_fit_rmse_px": 2.0,
+    "min_inlier_ratio": 0.6,
+    "min_spatial_coverage": 0.08,
+    "min_valid_tracks": 10,
+    "quality_gate": true,
+    "ransac_threshold_px": 1.5,
+    "use_ransac": true
+  },
+  "pga_model_version": null,
+  "run_id": "record-48",
+  "scale_parameters": {
+    "known_length_mm": null,
+    "known_length_px": null,
+    "method": "uncalibrated",
+    "valid_roi": null
+  },
+  "signal_parameters": {
+    "bandpass_hz": [
+      0.3,
+      8.0
+    ],
+    "causal": true,
+    "derivative_method": "causal_polynomial",
+    "detrend": false,
+    "online": {
+      "effective_lookahead_samples": 0,
+      "filter_order": 4,
+      "polynomial_order": 3,
+      "startup_behavior": "emit_nan_derivatives_until_ready",
+      "window_length": 9
+    },
+    "timestamp_aware": true
+  },
+  "software_versions": {
+    "PyYAML": "6.0.2",
+    "numpy": "1.26.4",
+    "onnx": "unavailable",
+    "onnxruntime": "unavailable",
+    "opencv-python": "4.12.0.88",
+    "opencv-python-headless": "unavailable",
+    "pandas": "2.3.0",
+    "psutil": "5.9.0",
+    "scikit-learn": "unavailable",
+    "scipy": "1.14.1",
+    "torch": "2.11.0",
+    "torchvision": "0.26.0"
+  },
+  "start_time": "2026-08-27T02:31:01.576137+00:00",
+  "tracker_parameters": {
+    "backend": "cotracker3_online",
+    "causality_semantics": "delayed_block_with_future_source_frames",
+    "checkpoint": null,
+    "cotracker_root": null,
+    "iters": 6,
+    "max_blocks_before_reseed": 64,
+    "model_resolution": [
+      384,
+      512
+    ],
+    "num_points": 32,
+    "point_mode": "corners",
+    "source_timestamp_future_context_frames": [
+      8,
+      15
+    ],
+    "step": 8,
+    "visibility_threshold": 0.6,
+    "window_len": 16
+  }
+}

@@ -1,0 +1,26 @@
+{
+  "checkpoint_path": "${PROJECT_ROOT}/co-tracker/checkpoints/scaled_online.pth",
+  "cotracker_root": "${PROJECT_ROOT}/co-tracker",
+  "decode_resize_backend": "opencv_decode_time_resize",
+  "device": "cpu",
+  "fps": 48.951048,
+  "frame_count": 877,
+  "path": "${DATA_ROOT}/\u89c6\u9891/48.avi",
+  "processed_shape": [
+    384,
+    512
+  ],
+  "queue_bound_blocks": 2,
+  "run_start_utc": "2026-08-27T02:31:01.576137+00:00",
+  "source_metadata": {
+    "decoder_backend": "opencv_fallback",
+    "fps": 48.951048,
+    "nframes": 877
+  },
+  "source_shape": [
+    2048,
+    2448,
+    3
+  ],
+  "timestamp_source": "container_constant_frame_rate_opencv_fallback"
+}

@@ -89,7 +89,8 @@ def _video_fps(path: str | Path, fps_override: float | None) -> tuple[float, str
     try:
         import imageio.v3 as iio
 
-        metadata = iio.immeta(path, plugin="FFMPEG")
+        metadata = dict(iio.immeta(path, plugin="FFMPEG"))
+        metadata.setdefault("decoder_backend", "imageio_ffmpeg")
         timestamp_source = "container_constant_frame_rate"
     except ImportError:
         try:
@@ -114,6 +115,19 @@ def _video_fps(path: str | Path, fps_override: float | None) -> tuple[float, str
     if fps <= 0:
         raise RuntimeError("video FPS is unavailable; provide --fps")
     return fps, timestamp_source, metadata
+
+
+def _decode_resize_backend_label(
+    direct_decode_resize: bool, source_metadata: dict[str, Any]
+) -> str:
+    if not direct_decode_resize:
+        return "post_decode_resize"
+    decoder_backend = source_metadata.get("decoder_backend")
+    if decoder_backend == "opencv_fallback":
+        return "opencv_decode_time_resize"
+    if decoder_backend == "imageio_ffmpeg":
+        return "ffmpeg_decode_time_resize"
+    return "decode_time_resize_backend_unrecorded"
 
 
 def _iter_video_rgb(
@@ -402,8 +416,8 @@ def run_offline_video(
             "timestamp_source": timestamp_source,
             "source_shape": source_shape,
             "processed_shape": model_size,
-            "decode_resize_backend": (
-                "ffmpeg_decode_time_resize" if direct_decode_resize else "post_decode_resize"
+            "decode_resize_backend": _decode_resize_backend_label(
+                direct_decode_resize, source_metadata
             ),
             "frame_count": frame_count,
             "source_metadata": {

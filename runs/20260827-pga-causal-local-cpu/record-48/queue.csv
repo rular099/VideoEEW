@@ -1,0 +1,2 @@
+timestamp,capture_queue_depth,tracker_queue_depth,output_queue_depth,dropped_frames,dropped_blocks,overload_state
+17.89542891911119,0,0,0,0,0,OFFLINE_BOUNDED_WINDOWS

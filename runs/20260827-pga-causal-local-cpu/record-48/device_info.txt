@@ -1,0 +1,5 @@
+{
+  "machine": "x86_64",
+  "platform": "Linux-7.0.3-arch1-2-x86_64-with-glibc2.43",
+  "requested_device": "cpu"
+}

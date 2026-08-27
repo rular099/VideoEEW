@@ -558,5 +558,30 @@
   `NOT_MEASURED/NOT_TESTED/NOT_EVALUABLE/BLOCKED`，不会生成虚构数值。
 - `AUDIT_SUMMARY.md` 直接回答计划要求的 A--L；区分 signal causality、tracker
   source-time causality 与 online availability。
-- 当前本地全量测试：55 passed / 0 failed（2026-08-27，
+- 当前本地全量测试：58 passed / 0 failed（2026-08-27，
   `python -m unittest discover -s tests -v`）。
+
+### 2026-08-27 本机受限资源执行
+
+- 本机为 8 CPU / 31 GiB RAM，CUDA driver 不可用。所有重任务使用 `nice=15`、
+  CPU affinity 0--1、单线程 BLAS/OpenMP 和 16 GiB address-space hard limit；未并发运行。
+- 本地数据重新发现 94 条记录：79 paired、2 paired split-sensor、13 missing sensor。
+  清单保存在 `runs/20260827-local-dataset/`，路径已重写为 `${DATA_ROOT}`。
+- 增加 OpenCV incremental decoder fallback，不修改或安装共享 Python 环境；审计字段如实
+  记录 `opencv_decode_time_resize`，本机数据和检查点绝对路径已脱敏。
+- 最短配对 record 48（877 frames，17.90 s）完成 CPU causal run：109 tracker blocks，
+  tracker mean/p50/p95/max 为 18.858/18.816/19.288/20.676 s/block；sum 2055.57 s。
+  total pipeline sum 2087.14 s，peak RSS 2513.81 MiB，877/877 motion quality 为 GOOD。
+- manifest 对应 clean commit `1c1b35f`，project diff 为空；checkpoint 与 CoTracker commit
+  分别保持已冻结的 SHA-256 和 `82e02e8...`。CoTracker checkout 本身 dirty，已如实记录。
+- record 48 causal feature 为 `videoeew-motion-v1`、`causal=1`；位移域候选 correlation
+  0.599、offset 7.51 s。该 alignment 仅为 post-hoc research diagnostic。
+- 单记录 PGA v2 的 causal input 检查为 PASS，但三个 subset 都因少于两条记录而
+  `NOT_EVALUABLE`；没有报告伪造的 CV 性能。
+- 一次真实 reseed（frame 512）acceleration spike ratio=1.217，低于 review threshold 3；
+  但 common translation innovation=2.089 px、velocity jump=102.24 px/s，因此不能由单次
+  边界宣布 reseed 已验证安全。
+- 首次尝试因本机缺 `imageio` 安全失败；当前失败表已清空，失败永久保存在
+  `failure_history.csv`。这一恢复语义有单元测试。
+- 本机 CPU 吞吐约为输入 block arrival budget 的 70 倍，明确不满足 realtime；不以该
+  run 替代 GPU 10/30 min 验收，也不在本机启动 81-record 全量任务。

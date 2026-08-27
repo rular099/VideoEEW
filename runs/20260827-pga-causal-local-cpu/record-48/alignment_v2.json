@@ -1,0 +1,27 @@
+{
+  "acceleration": {
+    "correlation": 0.3883302549853094,
+    "offset_s": 7.07999999999985,
+    "overlap_samples": 874,
+    "polarity": 1,
+    "sensor_channel": 0,
+    "status": "LOW_CORRELATION",
+    "visual_channel": 0
+  },
+  "displacement": {
+    "correlation": 0.5987193882521451,
+    "offset_s": 7.509999999999841,
+    "overlap_samples": 877,
+    "polarity": -1,
+    "sensor_channel": 1,
+    "status": "ALIGNED",
+    "visual_channel": 1
+  },
+  "interpretation": "RESEARCH_DIAGNOSTIC_ONLY_NOT_DEPLOYABLE",
+  "offset_definition": "compare visual(t) with sensor(t + offset_s)",
+  "preferred": "displacement",
+  "searched_offset_range_s": [
+    0.01,
+    41.10457108088881
+  ]
+}
