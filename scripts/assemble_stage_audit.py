@@ -63,10 +63,17 @@ def _copy_group(source: Path | None, names: tuple[str, ...], output: Path) -> No
 
 def assemble(args: argparse.Namespace) -> Path:
     repository = Path(__file__).resolve().parents[1]
-    # Snapshot provenance before creating an untracked run directory inside the
-    # repository; otherwise the audit would mark a clean commit dirty solely
-    # because of its own output.
+    # Snapshot provenance before creating or refreshing an audit directory;
+    # otherwise the audit would record changes caused solely by its own output.
     state = git_state(repository)
+    diff_payloads: dict[str, str] = {}
+    for arguments, name in (
+        (["git", "diff", "--binary", "HEAD"], "git_diff.patch"),
+        (["git", "diff", "--binary", "--cached"], "git_diff_cached.patch"),
+    ):
+        diff_payloads[name] = subprocess.run(
+            arguments, cwd=repository, check=True, text=True, capture_output=True
+        ).stdout
     output = Path(args.output).resolve()
     output.mkdir(parents=True, exist_ok=True)
     sources = {
@@ -91,13 +98,7 @@ def assemble(args: argparse.Namespace) -> Path:
     (output / "git_status_porcelain.txt").write_text(
         "\n".join(status_lines) + "\n", encoding="utf-8"
     )
-    for arguments, name in (
-        (["git", "diff", "--binary", "HEAD"], "git_diff.patch"),
-        (["git", "diff", "--binary", "--cached"], "git_diff_cached.patch"),
-    ):
-        diff = subprocess.run(
-            arguments, cwd=repository, check=True, text=True, capture_output=True
-        ).stdout
+    for name, diff in diff_payloads.items():
         (output / name).write_text(diff, encoding="utf-8")
 
     effective_config = Path(args.effective_config)
