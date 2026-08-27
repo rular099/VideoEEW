@@ -104,6 +104,34 @@ class RealtimeAuditTests(unittest.TestCase):
             )
             self.assertEqual(contract["end_to_end_source_timestamp_causality"], "FAIL")
 
+    def test_background_exception_is_written_as_fail_closed_event(self) -> None:
+        repository = Path(__file__).resolve().parents[2]
+        config = load_config(repository / "configs/causal_realtime.yaml")
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            checkpoint = root / "checkpoint.pth"
+            checkpoint.write_bytes(b"test-checkpoint")
+            runner = RealtimeRunner(
+                0,
+                config,
+                cotracker_root=root / "missing-cotracker",
+                checkpoint=checkpoint,
+                device="cpu",
+                output_directory=root / "run",
+            )
+
+            def fail_capture(duration_s: float | None) -> None:
+                raise RuntimeError("injected worker failure")
+
+            runner._capture_worker = fail_capture
+            runner._tracker_worker = lambda: None
+            runner._writer_worker = lambda: None
+            summary = runner.run(duration_s=0.0)
+            self.assertEqual(len(summary["worker_errors"]), 1)
+            self.assertEqual(summary["worker_errors"][0]["worker"], "capture")
+            events = (root / "run" / "runtime_events.csv").read_text(encoding="utf-8")
+            self.assertIn("injected worker failure", events)
+
 
 if __name__ == "__main__":
     unittest.main()

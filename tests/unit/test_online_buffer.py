@@ -40,7 +40,14 @@ class AuditedQueueTests(unittest.TestCase):
         self.assertEqual(queue.metrics()["rejected_items"], 1)
         self.assertEqual(queue.metrics()["max_observed_depth"], 2)
 
+    def test_full_queue_control_retry_is_not_counted_as_data_loss(self) -> None:
+        queue = AuditedBoundedQueue[int | None](maxsize=1, name="control-test")
+        queue.put(1)
+        with self.assertRaises(BufferOverload):
+            queue.put(None, count_rejection=False)
+        self.assertEqual(queue.metrics()["rejected_items"], 0)
+        self.assertEqual(queue.metrics()["max_observed_depth"], 1)
+
 
 if __name__ == "__main__":
     unittest.main()
-

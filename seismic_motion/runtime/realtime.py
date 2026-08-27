@@ -10,7 +10,7 @@ from pathlib import Path
 import subprocess
 from threading import Event, Thread
 import time
-from typing import Any, Sequence
+from typing import Any, Callable, Sequence
 
 import numpy as np
 import yaml
@@ -120,6 +120,25 @@ class RealtimeRunner:
     def _record_event(self, event: dict[str, object]) -> None:
         payload = {"monotonic_s": time.monotonic(), **event}
         self.events.append(payload)
+
+    def _guard_worker(
+        self, name: str, target: Callable[..., None], *args: object
+    ) -> None:
+        """Convert background exceptions into an explicit fail-closed event."""
+
+        try:
+            target(*args)
+        except Exception as exc:  # The error is retained in the run audit.
+            self._record_event(
+                {
+                    "event": "worker_error",
+                    "worker": name,
+                    "exception_type": type(exc).__name__,
+                    "reason": str(exc),
+                    "action": "stop_without_output_claim",
+                }
+            )
+            self.stop_event.set()
 
     def _capture_worker(self, duration_s: float | None) -> None:
         try:
@@ -266,7 +285,7 @@ class RealtimeRunner:
                 loop_index += 1
         while not self.stop_event.is_set():
             try:
-                self.capture_queue.put(None, timeout=0.1)
+                self.capture_queue.put(None, timeout=0.1, count_rejection=False)
                 break
             except BufferOverload:
                 continue
@@ -426,7 +445,12 @@ class RealtimeRunner:
                     last_captured,
                     first_block_in_segment,
                 )
-                self.output_queue.put(None, timeout=0.1)
+                while not self.stop_event.is_set():
+                    try:
+                        self.output_queue.put(None, timeout=0.1, count_rejection=False)
+                        break
+                    except BufferOverload:
+                        continue
                 return
             if captured.source_boundary and segment_frames:
                 self._finalize_segment(
@@ -768,9 +792,21 @@ class RealtimeRunner:
 
     def run(self, duration_s: float | None = None) -> dict[str, object]:
         workers = [
-            Thread(target=self._capture_worker, args=(duration_s,), name="capture"),
-            Thread(target=self._tracker_worker, name="tracker"),
-            Thread(target=self._writer_worker, name="writer"),
+            Thread(
+                target=self._guard_worker,
+                args=("capture", self._capture_worker, duration_s),
+                name="capture",
+            ),
+            Thread(
+                target=self._guard_worker,
+                args=("tracker", self._tracker_worker),
+                name="tracker",
+            ),
+            Thread(
+                target=self._guard_worker,
+                args=("writer", self._writer_worker),
+                name="writer",
+            ),
         ]
         for worker in workers:
             worker.start()
@@ -977,12 +1013,16 @@ class RealtimeRunner:
             and pga_p95 is not None
             and float(pga_p95) < float(self.config["runtime"]["max_end_to_end_latency_ms"])
             and not any(event.get("event") == "overload" for event in self.events)
+            and not any(event.get("event") == "worker_error" for event in self.events)
         )
         realtime_status = "PASS" if acceptance_pass else "FAIL" if eligible_10min else "NOT_TESTED"
         summary = {
             "queues": queue_metrics,
             "events": len(self.events),
             "stopped_for_overload": any(event.get("event") == "overload" for event in self.events),
+            "worker_errors": [
+                event for event in self.events if event.get("event") == "worker_error"
+            ],
             "timing": timing_summary,
             "queue_slopes_per_block": queue_slopes,
             "captured_frames": captured_frames,

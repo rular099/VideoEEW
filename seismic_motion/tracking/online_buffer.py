@@ -116,12 +116,15 @@ class AuditedBoundedQueue(Generic[T]):
     def capacity(self) -> int:
         return self._queue.maxsize
 
-    def put(self, item: T, timeout: float = 0.0) -> None:
+    def put(
+        self, item: T, timeout: float = 0.0, *, count_rejection: bool = True
+    ) -> None:
         try:
             self._queue.put(item, block=timeout > 0, timeout=max(0.0, timeout))
         except Full as exc:
-            with self._lock:
-                self.rejected_items += 1
+            if count_rejection:
+                with self._lock:
+                    self.rejected_items += 1
             raise BufferOverload(
                 f"{self.name} queue is full ({self.depth}/{self.capacity}); item rejected"
             ) from exc
