@@ -376,12 +376,19 @@ def build_bundle(
     else:
         silent_drop_status = "NO_SILENT_DROP_EXPLICIT_REJECTION_ACCEPTANCE_FAIL"
     reseed_p95 = reseed_details.get("acceleration_spike_ratio_p95")
+    reseed_events = reseed_details.get("reseed_events_analyzed")
     if reseed_p95 is None:
         reseed_status = "NOT_EVALUABLE"
-    elif float(reseed_p95) <= 3.0:
-        reseed_status = "PASS_P95_RATIO_LE_3"
-    else:
+    elif float(reseed_p95) > 3.0:
+        # One observed harmful boundary is sufficient to require review.
         reseed_status = "FAIL_REVIEW_REQUIRED"
+    elif reseed_events is None:
+        reseed_status = "NOT_EVALUABLE_EVENT_COUNT_UNKNOWN"
+    elif int(reseed_events) < 2:
+        # Do not turn one benign boundary into a general safety claim.
+        reseed_status = "NOT_EVALUABLE_SINGLE_EVENT_BELOW_THRESHOLD"
+    else:
+        reseed_status = "PASS_P95_RATIO_LE_3"
     subsets = pga_details.get("subsets", {})
     all_metrics = subsets.get("all", {}) if isinstance(subsets, dict) else {}
     quality_metrics = subsets.get("video_quality", {}) if isinstance(subsets, dict) else {}
@@ -420,7 +427,7 @@ def build_bundle(
         f"- B. PC 30 FPS without backlog: `{pc_30_status}`.",
         f"- C. PC 50 FPS realtime: `{pc_50_status}`.",
         f"- D. Silent frame drop: `{silent_drop_status}`; frames/blocks `{dropped_frames_for_review}` / `{dropped_blocks_for_review}`.",
-        f"- E. Reseed fake peak: `{reseed_status}`; acceleration-spike p95 ratio `{reseed_p95}`.",
+        f"- E. Reseed fake peak: `{reseed_status}`; analyzed events `{reseed_events}`, acceleration-spike p95 ratio `{reseed_p95}`.",
         f"- F. Strong-motion data used for ALL/VIDEO-QUALITY selection: `{'NO' if truth_blind_selection else 'NOT_VERIFIED'}`.",
         f"- G. ALL primary PGA metrics: `{json.dumps(all_primary, sort_keys=True) if all_primary else 'NOT_EVALUABLE'}`.",
         f"- H. VIDEO-QUALITY primary PGA metrics: `{json.dumps(quality_primary, sort_keys=True) if quality_primary else 'NOT_EVALUABLE'}`.",

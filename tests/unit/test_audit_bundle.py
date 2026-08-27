@@ -53,6 +53,25 @@ class AuditBundleTests(unittest.TestCase):
                 "NOT_MEASURED\n",
             )
 
+    def test_single_benign_reseed_is_not_reported_as_pass(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            run = root / "run"
+            run.mkdir()
+            (run / "manifest.json").write_text(
+                '{"git_commit":"abc","git_dirty":false,"device":"cpu"}\n',
+                encoding="utf-8",
+            )
+            (run / "metrics.json").write_text("{}\n", encoding="utf-8")
+            (run / "reseed_summary.json").write_text(
+                '{"reseed_events_analyzed":1,"acceleration_spike_ratio_p95":1.2}\n',
+                encoding="utf-8",
+            )
+            audit = build_bundle(run, root / "audit")
+            summary = (audit / "AUDIT_SUMMARY.md").read_text(encoding="utf-8")
+            self.assertIn("NOT_EVALUABLE_SINGLE_EVENT_BELOW_THRESHOLD", summary)
+            self.assertIn("analyzed events `1`", summary)
+
 
 if __name__ == "__main__":
     unittest.main()

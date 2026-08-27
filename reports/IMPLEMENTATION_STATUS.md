@@ -558,7 +558,7 @@
   `NOT_MEASURED/NOT_TESTED/NOT_EVALUABLE/BLOCKED`，不会生成虚构数值。
 - `AUDIT_SUMMARY.md` 直接回答计划要求的 A--L；区分 signal causality、tracker
   source-time causality 与 online availability。
-- 当前本地全量测试：58 passed / 0 failed（2026-08-27，
+- 当前本地全量测试：59 passed / 0 failed（2026-08-27，
   `python -m unittest discover -s tests -v`）。
 
 ### 2026-08-27 本机受限资源执行
@@ -580,7 +580,8 @@
   `NOT_EVALUABLE`；没有报告伪造的 CV 性能。
 - 一次真实 reseed（frame 512）acceleration spike ratio=1.217，低于 review threshold 3；
   但 common translation innovation=2.089 px、velocity jump=102.24 px/s，因此不能由单次
-  边界宣布 reseed 已验证安全。
+  边界宣布 reseed 已验证安全，audit 标记为
+  `NOT_EVALUABLE_SINGLE_EVENT_BELOW_THRESHOLD`。
 - 首次尝试因本机缺 `imageio` 安全失败；当前失败表已清空，失败永久保存在
   `failure_history.csv`。这一恢复语义有单元测试。
 - 本机 CPU 吞吐约为输入 block arrival budget 的 70 倍，明确不满足 realtime；不以该

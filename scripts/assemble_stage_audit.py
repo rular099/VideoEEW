@@ -61,6 +61,15 @@ def _copy_group(source: Path | None, names: tuple[str, ...], output: Path) -> No
             destination.write_text("NOT_MEASURED\n", encoding="utf-8")
 
 
+def _source_label(path: Path | None, repository: Path) -> str:
+    if path is None:
+        return "NOT_MEASURED"
+    try:
+        return str(path.relative_to(repository))
+    except ValueError:
+        return str(path)
+
+
 def assemble(args: argparse.Namespace) -> Path:
     repository = Path(__file__).resolve().parents[1]
     # Snapshot provenance before creating or refreshing an audit directory;
@@ -122,6 +131,9 @@ def assemble(args: argparse.Namespace) -> Path:
 
     pga_metrics = _json(sources["pga"] / "pga_metrics.json" if sources["pga"] else None)
     runtime_metrics = _json(sources["runtime"] / "metrics.json" if sources["runtime"] else None)
+    runtime_manifest = _json(
+        sources["runtime"] / "manifest.json" if sources["runtime"] else None
+    )
     stress_manifest = _json(
         sources["stress"] / "stress_manifest.json" if sources["stress"] else None
     )
@@ -169,7 +181,10 @@ def assemble(args: argparse.Namespace) -> Path:
         json.dumps(
             {
                 "development_host": environment["platform"],
-                "runtime_evidence": str(sources["runtime"] or "NOT_MEASURED"),
+                "runtime_evidence": _source_label(sources["runtime"], repository),
+                "runtime_device": runtime_manifest.get(
+                    "device", runtime_metrics.get("device", "NOT_MEASURED")
+                ),
                 "rk3588": "BLOCKED_NO_DEVICE",
             },
             indent=2,
@@ -178,7 +193,9 @@ def assemble(args: argparse.Namespace) -> Path:
         + "\n",
         encoding="utf-8",
     )
-    source_payload = {name: str(path) if path else "NOT_MEASURED" for name, path in sources.items()}
+    source_payload = {
+        name: _source_label(path, repository) for name, path in sources.items()
+    }
     (output / "input_manifest.json").write_text(
         json.dumps(source_payload, indent=2, sort_keys=True) + "\n", encoding="utf-8"
     )
@@ -186,7 +203,14 @@ def assemble(args: argparse.Namespace) -> Path:
         "run_id": output.name,
         "git_commit": commit,
         "git_dirty": bool(state.get("dirty", True)),
-        "device": runtime_metrics.get("device", "server-242-or-NOT_MEASURED"),
+        "device": runtime_manifest.get(
+            "device", runtime_metrics.get("device", "NOT_MEASURED")
+        ),
+        "checkpoint_sha256": runtime_manifest.get(
+            "checkpoint_sha256", "NOT_MEASURED"
+        ),
+        "cotracker_commit": runtime_manifest.get("cotracker_commit", "NOT_MEASURED"),
+        "cotracker_dirty": runtime_manifest.get("cotracker_dirty", "NOT_MEASURED"),
         "input_id": source_payload,
         "signal_parameters": configuration.get("signal", {}),
         "tracker_parameters": configuration.get("tracker", {}),
