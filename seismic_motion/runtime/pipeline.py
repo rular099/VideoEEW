@@ -86,13 +86,70 @@ def _video_fps(path: str | Path, fps_override: float | None) -> tuple[float, str
         if fps_override <= 0:
             raise ValueError("fps_override must be positive")
         return float(fps_override), "user_override", {}
-    import imageio.v3 as iio
+    try:
+        import imageio.v3 as iio
 
-    metadata = iio.immeta(path, plugin="FFMPEG")
+        metadata = iio.immeta(path, plugin="FFMPEG")
+        timestamp_source = "container_constant_frame_rate"
+    except ImportError:
+        try:
+            import cv2
+        except ImportError as exc:
+            raise RuntimeError("video decoding requires imageio[ffmpeg] or OpenCV") from exc
+        capture = cv2.VideoCapture(str(path))
+        if not capture.isOpened():
+            raise RuntimeError(f"video cannot be opened: {path}")
+        metadata = {
+            "fps": float(capture.get(cv2.CAP_PROP_FPS)),
+            "size": (
+                int(capture.get(cv2.CAP_PROP_FRAME_WIDTH)),
+                int(capture.get(cv2.CAP_PROP_FRAME_HEIGHT)),
+            ),
+            "nframes": int(capture.get(cv2.CAP_PROP_FRAME_COUNT)),
+            "decoder_backend": "opencv_fallback",
+        }
+        capture.release()
+        timestamp_source = "container_constant_frame_rate_opencv_fallback"
     fps = float(metadata.get("fps", 0.0))
     if fps <= 0:
         raise RuntimeError("video FPS is unavailable; provide --fps")
-    return fps, "container_constant_frame_rate", metadata
+    return fps, timestamp_source, metadata
+
+
+def _iter_video_rgb(
+    path: str | Path, *, output_size: tuple[int, int] | None = None
+):
+    """Decode incrementally, falling back to OpenCV without changing environments."""
+
+    try:
+        import imageio.v3 as iio
+    except ImportError:
+        try:
+            import cv2
+        except ImportError as exc:
+            raise RuntimeError("video decoding requires imageio[ffmpeg] or OpenCV") from exc
+        capture = cv2.VideoCapture(str(path))
+        if not capture.isOpened():
+            raise RuntimeError(f"video cannot be opened: {path}")
+        try:
+            while True:
+                ok, frame_bgr = capture.read()
+                if not ok:
+                    break
+                if output_size is not None:
+                    height, width = output_size
+                    frame_bgr = cv2.resize(
+                        frame_bgr, (width, height), interpolation=cv2.INTER_AREA
+                    )
+                yield cv2.cvtColor(frame_bgr, cv2.COLOR_BGR2RGB)
+        finally:
+            capture.release()
+        return
+    iterator_options: dict[str, object] = {"plugin": "FFMPEG"}
+    if output_size is not None:
+        height, width = output_size
+        iterator_options["size"] = (width, height)
+    yield from iio.imiter(path, **iterator_options)
 
 
 def run_offline_video(
@@ -105,8 +162,6 @@ def run_offline_video(
     fps_override: float | None = None,
 ) -> OfflinePipelineResult:
     """Decode incrementally, track bounded windows, then produce audit arrays."""
-
-    import imageio.v3 as iio
 
     tracker_config = config["tracker"]
     runtime_config = config["runtime"]
@@ -142,13 +197,15 @@ def run_offline_video(
         video_config.get("decode_resize_backend") == "ffmpeg"
         and video_config.get("roi") is None
     )
-    iterator_options: dict[str, object] = {"plugin": "FFMPEG"}
     if direct_decode_resize:
-        iterator_options["size"] = (model_size[1], model_size[0])
         source_size = source_metadata.get("size") or source_metadata.get("source_size")
         if isinstance(source_size, (tuple, list)) and len(source_size) == 2:
             source_shape = (int(source_size[1]), int(source_size[0]), 3)
-    for frame_index, frame in enumerate(iio.imiter(video_path, **iterator_options)):
+    for frame_index, frame in enumerate(
+        _iter_video_rgb(
+            video_path, output_size=model_size if direct_decode_resize else None
+        )
+    ):
         capture_end = time.perf_counter()
         frame_array = np.asarray(frame)
         if source_shape is None:
@@ -368,6 +425,21 @@ def write_run_artifacts(
     result: OfflinePipelineResult,
     config: dict[str, Any],
 ) -> None:
+    repository = Path(__file__).resolve().parents[2]
+    try:
+        project_git = git_state(repository)
+    except (OSError, subprocess.SubprocessError):
+        project_git = {"commit": "unknown", "dirty": True, "status": []}
+    try:
+        project_diff = subprocess.run(
+            ["git", "diff", "--binary", "HEAD"],
+            cwd=repository,
+            check=True,
+            text=True,
+            capture_output=True,
+        ).stdout
+    except (OSError, subprocess.SubprocessError):
+        project_diff = ""
     output = Path(run_directory)
     output.mkdir(parents=True, exist_ok=True)
     result.tracks.save_npz(output / "tracks.npz")
@@ -460,11 +532,6 @@ def write_run_artifacts(
     (output / "config.yaml").write_text(
         yaml.safe_dump(config, sort_keys=False), encoding="utf-8"
     )
-    repository = Path(__file__).resolve().parents[2]
-    try:
-        project_git = git_state(repository)
-    except (OSError, subprocess.SubprocessError):
-        project_git = {"commit": "unknown", "dirty": True, "status": []}
     checkpoint_path = Path(str(result.video_metadata["checkpoint_path"]))
     cotracker_path = Path(str(result.video_metadata["cotracker_root"]))
     try:
@@ -492,17 +559,7 @@ def write_run_artifacts(
     (output / "git_status.txt").write_text(
         "\n".join(project_git.get("status", [])) + "\n", encoding="utf-8"
     )
-    try:
-        diff = subprocess.run(
-            ["git", "diff", "--binary", "HEAD"],
-            cwd=repository,
-            check=True,
-            text=True,
-            capture_output=True,
-        ).stdout
-    except (OSError, subprocess.SubprocessError):
-        diff = ""
-    (output / "git_diff.patch").write_text(diff, encoding="utf-8")
+    (output / "git_diff.patch").write_text(project_diff, encoding="utf-8")
     manifest = {
         "run_id": output.name,
         "git_commit": project_git.get("commit", "unknown"),

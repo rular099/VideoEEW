@@ -1,0 +1,15 @@
+{
+  "deployment_pga_allowed": false,
+  "paired_pga_horizontal_vector_gal": {
+    "maximum": 411.80734932368557,
+    "median": 148.394101641541,
+    "minimum": 0.32112614343899193
+  },
+  "pairing_status_counts": {
+    "missing_strong_motion": 13,
+    "paired": 79,
+    "paired_split_sensor": 2
+  },
+  "reason": "geometric scale and exact video/sensor alignment are not yet established",
+  "records": 94
+}

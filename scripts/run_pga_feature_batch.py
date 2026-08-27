@@ -6,6 +6,7 @@ from __future__ import annotations
 import argparse
 import csv
 from dataclasses import asdict
+from datetime import datetime, timezone
 import json
 from pathlib import Path
 
@@ -19,6 +20,40 @@ from seismic_motion.pga.alignment import (
 )
 from seismic_motion.pga.records import discover_dataset_pairs, load_strong_motion_files
 from seismic_motion.runtime.pipeline import run_offline_video, write_run_artifacts
+
+
+FAILURE_FIELDS = (
+    "record_id",
+    "status",
+    "exception_type",
+    "reason",
+    "attempt_utc",
+)
+
+
+def _read_failure_rows(path: Path) -> list[dict[str, object]]:
+    if not path.is_file():
+        return []
+    with path.open("r", encoding="utf-8") as handle:
+        return [dict(row) for row in csv.DictReader(handle)]
+
+
+def _write_failure_rows(path: Path, rows: list[dict[str, object]]) -> None:
+    with path.open("w", newline="", encoding="utf-8") as handle:
+        writer = csv.DictWriter(handle, fieldnames=FAILURE_FIELDS, extrasaction="ignore")
+        writer.writeheader()
+        writer.writerows(rows)
+
+
+def _migrate_failure_history(current: Path, history: Path) -> list[dict[str, object]]:
+    rows = _read_failure_rows(history)
+    for previous in _read_failure_rows(current):
+        previous.setdefault("attempt_utc", "UNKNOWN_PREVIOUS_ATTEMPT")
+        if previous not in rows:
+            rows.append(previous)
+    if rows:
+        _write_failure_rows(history, rows)
+    return rows
 
 
 def main() -> None:
@@ -49,6 +84,11 @@ def main() -> None:
     output_root.mkdir(parents=True, exist_ok=True)
     feature_rows: list[dict[str, object]] = []
     failure_rows: list[dict[str, object]] = []
+    current_failure_path = output_root / "failed_records.csv"
+    failure_history_path = output_root / "failure_history.csv"
+    failure_history = _migrate_failure_history(
+        current_failure_path, failure_history_path
+    )
     for record_id in record_ids:
         try:
             if record_id not in pairs:
@@ -163,8 +203,10 @@ def main() -> None:
                     "status": "FAILED",
                     "exception_type": type(exc).__name__,
                     "reason": str(exc),
+                    "attempt_utc": datetime.now(timezone.utc).isoformat(),
                 }
             )
+            failure_history.append(failure_rows[-1])
             if args.fail_fast:
                 raise
         feature_path = output_root / "pga_features.csv"
@@ -173,13 +215,9 @@ def main() -> None:
                 writer = csv.DictWriter(handle, fieldnames=list(feature_rows[0]))
                 writer.writeheader()
                 writer.writerows(feature_rows)
-        if failure_rows:
-            with (output_root / "failed_records.csv").open(
-                "w", newline="", encoding="utf-8"
-            ) as handle:
-                writer = csv.DictWriter(handle, fieldnames=list(failure_rows[0]))
-                writer.writeheader()
-                writer.writerows(failure_rows)
+        _write_failure_rows(current_failure_path, failure_rows)
+        if failure_history:
+            _write_failure_rows(failure_history_path, failure_history)
         print(
             f"processed record {record_id}: success={len(feature_rows)} failed={len(failure_rows)} "
             f"total={len(record_ids)}",
