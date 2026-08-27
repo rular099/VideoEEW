@@ -26,11 +26,11 @@
 - I. Offline versus causal difference: see `offline_vs_causal_pga.png` and the causal signal benchmark; `NOT_EVALUABLE` if absent.
 - J. CoTracker common/local/rotation stress evidence: `NOT_MEASURED`.
 - K. RK3588 measured: `NO_BLOCKED_NO_DEVICE`.
-- L. Evidence commit/config: `90fb33b02fa484a735196c2accf77a5a0d8c62e8` / `effective_config.yaml`.
+- L. Evidence commit/config: `1e2ab3a2fc969a21edaabf74e885624f0bb7e387` / `effective_config.yaml`.
 
 ## Scope and provenance
 
-- Git commit: `90fb33b02fa484a735196c2accf77a5a0d8c62e8`; dirty: `False`.
+- Git commit: `1e2ab3a2fc969a21edaabf74e885624f0bb7e387`; dirty: `False`.
 - Input: `{'alignment': 'NOT_MEASURED', 'pga': '/home/zhangb/work/people/zhangbei/cotracker_rk3588/VideoEEW/runs/20260823-pga-evaluation-v2-offline-input', 'reseed': 'NOT_MEASURED', 'runtime': '/home/zhangb/work/people/zhangbei/cotracker_rk3588/VideoEEW/runs/20260825-realtime-local-cpu-smoke', 'stress': 'NOT_MEASURED'}`.
 - Device: `server-242-or-NOT_MEASURED`.
 - Checkpoint SHA-256: `unknown`.
@@ -39,8 +39,8 @@
 - Signal parameters: `{"bandpass_hz": [0.3, 8.0], "causal": true, "derivative_method": "causal_polynomial", "detrend": false, "online": {"effective_lookahead_samples": 0, "filter_order": 4, "polynomial_order": 3, "startup_behavior": "emit_nan_derivatives_until_ready", "window_length": 9}, "timestamp_aware": true}`.
 - PGA model: `videoeew-pga-v2-research`.
 - Change summary: `strict causal online signal, unbiased subsets, realtime audit, reseed and stress`.
-- Working-tree patch: `1 files, +1/-1 lines`.
-- Changed paths: `['runs/20260826-next-stage-audit-partial/git_commit.txt']`.
+- Working-tree patch: `0 files, +0/-0 lines`.
+- Changed paths: `[]`.
 
 ## Accuracy and quality
 
