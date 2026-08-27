@@ -1,2 +1,1 @@
-record_id,status,exception_type,reason
-48,FAILED,ModuleNotFoundError,No module named 'imageio'
+record_id,status,exception_type,reason,attempt_utc
