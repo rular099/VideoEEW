@@ -37,10 +37,15 @@ class AuditBundleTests(unittest.TestCase):
                 "0,0,100,110,2000\n",
                 encoding="utf-8",
             )
+            (run / "plots").mkdir()
+            (run / "plots" / "plot_manifest.json").write_text(
+                '{"runtime_memory.png":"GENERATED"}\n', encoding="utf-8"
+            )
             audit = build_bundle(run, root / "audit", make_zip=True)
             self.assertTrue((audit / "AUDIT_SUMMARY.md").is_file())
             self.assertTrue((audit / "timing_summary.csv").is_file())
             self.assertTrue((audit / "memory_summary.csv").is_file())
+            self.assertTrue((audit / "plots" / "plot_manifest.json").is_file())
             self.assertTrue((root / "audit" / "sample.zip").is_file())
             summary = (audit / "AUDIT_SUMMARY.md").read_text(encoding="utf-8")
             self.assertIn("abc", summary)

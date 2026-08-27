@@ -271,7 +271,14 @@ def build_bundle(
         plots_output = audit / "plots"
         plots_output.mkdir(exist_ok=True)
         for plot in plots_source.iterdir():
-            if plot.is_file() and plot.suffix.lower() in {".png", ".jpg", ".jpeg", ".svg", ".pdf"}:
+            if plot.is_file() and plot.suffix.lower() in {
+                ".png",
+                ".jpg",
+                ".jpeg",
+                ".svg",
+                ".pdf",
+                ".json",
+            }:
                 shutil.copy2(plot, plots_output / plot.name)
     tracker_timing = next(
         (row for row in timing_summary if row["metric"] == "tracker_ms"), {}
