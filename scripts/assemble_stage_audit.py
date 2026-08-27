@@ -56,7 +56,13 @@ def _copy_group(source: Path | None, names: tuple[str, ...], output: Path) -> No
     for name in names:
         destination = output / name
         if source is not None and (source / name).is_file():
-            shutil.copy2(source / name, destination)
+            source_path = source / name
+            if source_path.suffix.lower() == ".csv":
+                # csv.writer uses CRLF by default. Normalize composite evidence
+                # so Git does not report every copied row as trailing whitespace.
+                destination.write_bytes(source_path.read_bytes().replace(b"\r\n", b"\n"))
+            else:
+                shutil.copy2(source_path, destination)
         else:
             destination.write_text("NOT_MEASURED\n", encoding="utf-8")
 

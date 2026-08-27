@@ -2,10 +2,24 @@ from pathlib import Path
 import tempfile
 import unittest
 
+from scripts.assemble_stage_audit import _copy_group
 from scripts.build_audit_bundle import build_bundle
 
 
 class AuditBundleTests(unittest.TestCase):
+    def test_composite_csv_copy_normalizes_line_endings(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            source = root / "source"
+            output = root / "output"
+            source.mkdir()
+            output.mkdir()
+            (source / "metrics.csv").write_bytes(b"name,value\r\na,1\r\n")
+            _copy_group(source, ("metrics.csv",), output)
+            self.assertEqual(
+                (output / "metrics.csv").read_bytes(), b"name,value\na,1\n"
+            )
+
     def test_builds_summary_and_tables_from_partial_run(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)

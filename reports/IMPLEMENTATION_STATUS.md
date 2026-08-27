@@ -558,7 +558,7 @@
   `NOT_MEASURED/NOT_TESTED/NOT_EVALUABLE/BLOCKED`，不会生成虚构数值。
 - `AUDIT_SUMMARY.md` 直接回答计划要求的 A--L；区分 signal causality、tracker
   source-time causality 与 online availability。
-- 当前本地全量测试：59 passed / 0 failed（2026-08-27，
+- 当前本地全量测试：60 passed / 0 failed（2026-08-27，
   `python -m unittest discover -s tests -v`）。
 
 ### 2026-08-27 本机受限资源执行
